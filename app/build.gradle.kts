@@ -158,7 +158,9 @@ dependencies {
 
     implementation("org.mozilla:rhino:1.7.15")
     implementation("org.nanohttpd:nanohttpd:2.3.1")
-    implementation("com.google.android.gms:play-services-cast-framework:23.0.0")
+    // Cast 23.0.0 requires MediaRouter 1.9 beta, compileSdk 37, and AGP 9.1.
+    // 22.3.1 is the newest compatible line for this compileSdk 36 / AGP 8.9 project.
+    implementation("com.google.android.gms:play-services-cast-framework:22.3.1")
     implementation("com.hp.jipp:jipp-core:0.7.18")
     implementation("com.hp.jipp:jipp-pdl:0.7.18")
     implementation("androidx.media3:media3-exoplayer:1.3.1")
