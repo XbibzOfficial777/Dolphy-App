@@ -1589,7 +1589,7 @@ private fun LiquidGlassBottomNavigation(
         LiquidBottomTab(onClick = onOtherClick) {
             Icon(
                 imageVector = Icons.Default.Extension,
-                contentDescription = "Other",
+                contentDescription = "Lainnya",
                 tint = iconTint,
                 modifier = Modifier.size(26.dp),
             )
@@ -1597,7 +1597,7 @@ private fun LiquidGlassBottomNavigation(
         LiquidBottomTab(onClick = onSettingsClick) {
             Icon(
                 imageVector = Icons.Default.Settings,
-                contentDescription = "Settings",
+                contentDescription = "Pengaturan",
                 tint = iconTint,
                 modifier = Modifier.size(26.dp),
             )
@@ -1912,32 +1912,32 @@ private fun AdvertiseSpamScreen(viewModel: SpamViewModel) {
             onDismiss = { showAddDialog = false },
             onAdd = { name, companyCodeRaw, payload, randomizeMac, intervalRaw ->
                 if (name.isBlank()) {
-                    Toast.makeText(context, "Name is required", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Nama diperlukan", Toast.LENGTH_SHORT).show()
                     return@AdvertiseAddDialog
                 }
 
                 val companyCode = try {
                     HexUtils.parseCompanyCode(companyCodeRaw)
                 } catch (e: IllegalArgumentException) {
-                    Toast.makeText(context, e.message ?: "Invalid company code", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, e.message ?: "Kode perusahaan yang tidak valid", Toast.LENGTH_SHORT).show()
                     return@AdvertiseAddDialog
                 }
 
                 val payloadBytes = try {
                     HexUtils.hexToByteArray(payload)
                 } catch (e: IllegalArgumentException) {
-                    Toast.makeText(context, e.message ?: "Invalid hex payload", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, e.message ?: "Payload hex tidak valid", Toast.LENGTH_SHORT).show()
                     return@AdvertiseAddDialog
                 }
 
                 if (payloadBytes.size + 4 > 31) {
-                    Toast.makeText(context, "Payload too long for legacy advertising", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Payload terlalu panjang untuk advertising lama", Toast.LENGTH_SHORT).show()
                     return@AdvertiseAddDialog
                 }
 
                 val interval = intervalRaw.toIntOrNull() ?: 200
                 if (interval !in 200..1000) {
-                    Toast.makeText(context, "Interval must be 200-1000 ms", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Interval harus 200-1000 ms", Toast.LENGTH_SHORT).show()
                     return@AdvertiseAddDialog
                 }
 
@@ -1968,28 +1968,28 @@ private fun AdvertiseSpamScreen(viewModel: SpamViewModel) {
             onDismiss = { editingPreset = null },
             onAdd = { name, companyCodeRaw, payload, randomizeMac, intervalRaw ->
                 if (name.isBlank()) {
-                    Toast.makeText(ctx, "Name is required", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(ctx, "Nama diperlukan", Toast.LENGTH_SHORT).show()
                     return@AdvertiseAddDialog
                 }
                 val companyCode = try {
                     HexUtils.parseCompanyCode(companyCodeRaw)
                 } catch (e: IllegalArgumentException) {
-                    Toast.makeText(ctx, e.message ?: "Invalid company code", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(ctx, e.message ?: "Kode perusahaan yang tidak valid", Toast.LENGTH_SHORT).show()
                     return@AdvertiseAddDialog
                 }
                 val payloadBytes = try {
                     HexUtils.hexToByteArray(payload)
                 } catch (e: IllegalArgumentException) {
-                    Toast.makeText(ctx, e.message ?: "Invalid hex payload", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(ctx, e.message ?: "Payload hex tidak valid", Toast.LENGTH_SHORT).show()
                     return@AdvertiseAddDialog
                 }
                 if (payloadBytes.size + 4 > 31) {
-                    Toast.makeText(ctx, "Payload too long for legacy advertising", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(ctx, "Payload terlalu panjang untuk advertising lama", Toast.LENGTH_SHORT).show()
                     return@AdvertiseAddDialog
                 }
                 val interval = intervalRaw.toIntOrNull() ?: 200
                 if (interval !in 200..1000) {
-                    Toast.makeText(ctx, "Interval must be 200-1000 ms", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(ctx, "Interval harus 200-1000 ms", Toast.LENGTH_SHORT).show()
                     return@AdvertiseAddDialog
                 }
                 viewModel.updateAdvertisePreset(
@@ -2124,7 +2124,7 @@ private fun AdvertiseSpamScreen(viewModel: SpamViewModel) {
                                     }) {
                                         Icon(
                                             imageVector = Icons.Default.PlayArrow,
-                                            contentDescription = "Start",
+                                            contentDescription = "Mulai",
                                             tint = accent
                                         )
                                     }
@@ -2135,7 +2135,7 @@ private fun AdvertiseSpamScreen(viewModel: SpamViewModel) {
                                     }) {
                                         Icon(
                                             imageVector = Icons.Default.Stop,
-                                            contentDescription = "Stop",
+                                            contentDescription = "Hentikan",
                                             tint = accent
                                         )
                                     }
@@ -2490,7 +2490,7 @@ internal fun RandomExternalDolphinAnimation(modifier: Modifier = Modifier) {
         if (frameBitmap != null) {
             Image(
                 bitmap = frameBitmap,
-                contentDescription = "Random dolphin animation",
+                contentDescription = "Animasi lumba-lumba acak",
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(2f),
@@ -2570,7 +2570,7 @@ fun BleSpamScreen(viewModel: SpamViewModel, onSectionClick: (BleSection) -> Unit
                             )
                         }
                         Text(
-                            text = "$bleDelay мс",
+                            text = "$bleDelay ms",
                             modifier = Modifier.padding(horizontal = 16.dp),
                             color = MaterialTheme.colorScheme.onBackground,
                             style = MaterialTheme.typography.titleLarge
@@ -2605,7 +2605,7 @@ fun BleSpamScreen(viewModel: SpamViewModel, onSectionClick: (BleSection) -> Unit
             val isNotYourActive = spammingStates[Pair(SpamType.CONTINUITY, notYourMode)] == true
             val isCombinedActive = isDeviceActive || isNotYourActive
             AnimatedBleButton(
-                text = "Device",
+                text = "Perangkat",
                 isActive = isCombinedActive,
                 onClick = {
                     if (isCombinedActive) {
@@ -2628,7 +2628,7 @@ fun BleSpamScreen(viewModel: SpamViewModel, onSectionClick: (BleSection) -> Unit
         item {
             val mode = ContinuityMode(ContinuityType.ACTION, false)
             AnimatedBleButton(
-                text = "Action Modal",
+                text = "Modal Aksi",
                 isActive = spammingStates[Pair(SpamType.CONTINUITY, mode)] == true,
                 onClick = { ensureBluetoothEnabled { viewModel.toggleBleSpam(SpamType.CONTINUITY, mode) } },
                 blinkIntervalMs = bleDelay.toLong(),
@@ -2661,7 +2661,7 @@ fun BleSpamScreen(viewModel: SpamViewModel, onSectionClick: (BleSection) -> Unit
         item {
             val mode = ContinuityMode(ContinuityType.NEARBY_INFO, false)
             AnimatedBleButton(
-                text = "Nearby Info",
+                text = "Info di dekatnya",
                 isActive = spammingStates[Pair(SpamType.CONTINUITY, mode)] == true,
                 onClick = { ensureBluetoothEnabled { viewModel.toggleBleSpam(SpamType.CONTINUITY, mode) } },
                 blinkIntervalMs = bleDelay.toLong(),
@@ -2730,7 +2730,7 @@ fun BleSpamScreen(viewModel: SpamViewModel, onSectionClick: (BleSection) -> Unit
         }
         item {
             AnimatedBleButton(
-                text = "Vivo Gamepad",
+                text = "Gamepad Vivo",
                 isActive = spammingStates[Pair(SpamType.VIVO, VivoDevice.Type.GAMEPAD)] == true,
                 onClick = { ensureBluetoothEnabled { viewModel.toggleBleSpam(SpamType.VIVO, VivoDevice.Type.GAMEPAD) } },
                 blinkIntervalMs = bleDelay.toLong(),
@@ -2743,7 +2743,7 @@ fun BleSpamScreen(viewModel: SpamViewModel, onSectionClick: (BleSection) -> Unit
 
         item {
             AnimatedBleButton(
-                text = "Swift Pair на Windows",
+                text = "Swift Pair di Windows",
                 isActive = spammingStates[Pair(SpamType.SWIFT_PAIR, null)] == true,
                 onClick = { ensureBluetoothEnabled { viewModel.toggleBleSpam(SpamType.SWIFT_PAIR, null) } },
                 blinkIntervalMs = bleDelay.toLong(),
@@ -2780,7 +2780,7 @@ fun BleSpamScreen(viewModel: SpamViewModel, onSectionClick: (BleSection) -> Unit
 
         item {
             Text(
-                text = "All in one",
+                text = "Semua dalam satu",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.fillMaxWidth()
@@ -2788,7 +2788,7 @@ fun BleSpamScreen(viewModel: SpamViewModel, onSectionClick: (BleSection) -> Unit
         }
         item {
             AnimatedBleButton(
-                text = "Kitchen sink",
+                text = "Kitchen Sink",
                 isActive = kitchenSinkActive,
                 onClick = { ensureBluetoothEnabled { viewModel.toggleKitchenSink() } },
                 blinkIntervalMs = bleDelay.toLong(),
@@ -2998,7 +2998,7 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
 
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(M3SegmentedListItemSpacing)) {
-                    M3SegmentedListSectionHeader(title = "PASSPORT")
+                    M3SegmentedListSectionHeader(title = "PASPOR")
 
 
                     MaterialCard(
@@ -3630,7 +3630,7 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(M3SegmentedListItemSpacing)) {
                     Text(
-                        text = "ABOUT",
+                        text = "TENTANG",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Bold,
@@ -3646,15 +3646,15 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                             SettingsItem(onClick = { uriHandler.openUri("https://t.me/Dolphy_app_official") }) {
                                 Icon(Icons.AutoMirrored.Filled.Send, null, tint = accentColor, modifier = Modifier.size(24.dp))
                                 Spacer(Modifier.width(12.dp))
-                                Text("Dolphy dev", style = MaterialTheme.typography.bodyLarge)
+                                Text("Pengembang Dolphy", style = MaterialTheme.typography.bodyLarge)
                                 Spacer(Modifier.weight(1f))
                                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             MaterialDivider()
-                            SettingsItem(onClick = { uriHandler.openUri("https://github.com/unvoiddd/Dolphy-App") }) {
+                            SettingsItem(onClick = { uriHandler.openUri("https://github.com/XbibzOfficial777/Dolphy-App") }) {
                                 Icon(Icons.Default.Circle, null, tint = accentColor, modifier = Modifier.size(24.dp))
                                 Spacer(Modifier.width(12.dp))
-                                Text("Github", style = MaterialTheme.typography.bodyLarge)
+                                Text("GitHub", style = MaterialTheme.typography.bodyLarge)
                                 Spacer(Modifier.weight(1f))
                                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
@@ -3666,7 +3666,7 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
             item {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Dolphy ($appVersion)\nЗащищено GNU GPL",
+                    text = "Dolphy ($appVersion)\nDilindungi GNU GPL",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxWidth(),
@@ -3683,7 +3683,7 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Спасибо:",
+                        text = "Terima kasih:",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Bold
@@ -3810,7 +3810,7 @@ private fun buildBleSectionModeGroups(context: Context, section: BleSection): Li
                     }
                 ),
                 BleModeGroup(
-                    title = "Nearby Info",
+                    title = "Info di dekatnya",
                     modes = listOf(Pair(SpamType.CONTINUITY, ContinuityMode(ContinuityType.NEARBY_INFO, false))),
                     items = nearbyItems.map { device ->
                         BleDeviceItem(device.name) { ContinuitySingleSpam(device, false) }
@@ -4011,7 +4011,7 @@ fun BleSectionScreen(section: BleSection, onBack: () -> Unit) {
                 item {
                     val deviceCount = groups.sumOf { it.items.size }
                     Text(
-                        text = "$deviceCount Devices in ${groups.size} Lists",
+                        text = "$deviceCount perangkat dalam ${groups.size} daftar",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.fillMaxWidth(),
@@ -4035,7 +4035,7 @@ fun BleSectionScreen(section: BleSection, onBack: () -> Unit) {
                         ) {
                             Icon(
                                 imageVector = if (isExpanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowRight,
-                                contentDescription = "Expand",
+                                contentDescription = "Luaskan",
                                 tint = MaterialTheme.colorScheme.onBackground
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -4140,7 +4140,7 @@ fun AccentColorScreen(viewModel: SpamViewModel, onNavigateBack: () -> Unit) {
                         onClick = onNavigateBack,
                         modifier = Modifier.align(Alignment.CenterStart)
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = accentColor)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali", tint = accentColor)
                     }
                     Text(
                         text = stringResource(R.string.theme_selection_title),
@@ -4155,7 +4155,7 @@ fun AccentColorScreen(viewModel: SpamViewModel, onNavigateBack: () -> Unit) {
                         },
                         modifier = Modifier.align(Alignment.CenterEnd)
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Color", tint = accentColor)
+                        Icon(Icons.Default.Add, contentDescription = "Tambah warna", tint = accentColor)
                     }
                 }
             }
@@ -4317,7 +4317,7 @@ fun AccentColorScreen(viewModel: SpamViewModel, onNavigateBack: () -> Unit) {
 
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Red", color = Color(0xFFFF5252), fontWeight = FontWeight.SemiBold)
+                            Text("Merah", color = Color(0xFFFF5252), fontWeight = FontWeight.SemiBold)
                             Text("$customR", fontWeight = FontWeight.Bold)
                         }
                         DolphySlider(
@@ -4330,7 +4330,7 @@ fun AccentColorScreen(viewModel: SpamViewModel, onNavigateBack: () -> Unit) {
 
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Green", color = Color(0xFF69F0AE), fontWeight = FontWeight.SemiBold)
+                            Text("Hijau", color = Color(0xFF69F0AE), fontWeight = FontWeight.SemiBold)
                             Text("$customG", fontWeight = FontWeight.Bold)
                         }
                         DolphySlider(
@@ -4343,7 +4343,7 @@ fun AccentColorScreen(viewModel: SpamViewModel, onNavigateBack: () -> Unit) {
 
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Blue", color = Color(0xFF448AFF), fontWeight = FontWeight.SemiBold)
+                            Text("Biru", color = Color(0xFF448AFF), fontWeight = FontWeight.SemiBold)
                             Text("$customB", fontWeight = FontWeight.Bold)
                         }
                         DolphySlider(
@@ -4411,7 +4411,7 @@ fun ThemeModeScreen(viewModel: SpamViewModel, onNavigateBack: () -> Unit) {
                             onClick = onNavigateBack,
                             modifier = Modifier.align(Alignment.CenterStart)
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = accentColor)
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali", tint = accentColor)
                         }
                         Text(
                             text = stringResource(R.string.theme_selection_title),
@@ -4703,7 +4703,7 @@ fun LevelUpAnimation(
         if (frameBitmap != null) {
             Image(
                 bitmap = frameBitmap,
-                contentDescription = "Level up animation",
+                contentDescription = "Animasi naik level",
                 modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
                 contentScale = ContentScale.Fit,
                 colorFilter = ColorFilter.colorMatrix(ColorMatrix(floatArrayOf(
@@ -4862,7 +4862,7 @@ fun DolphyScreen(viewModel: DolphyViewModel, navController: NavController? = nul
 
                 Image(
                     painter = painterResource(id = portrait),
-                    contentDescription = "Portrait",
+                    contentDescription = "Potret",
                     modifier = Modifier
                         .size(90.dp)
                         .clip(RoundedCornerShape(12.dp))
@@ -4907,7 +4907,7 @@ fun DolphyScreen(viewModel: DolphyViewModel, navController: NavController? = nul
                                 ) {
                                     Icon(
                                         Icons.Filled.Star,
-                                        contentDescription = "Customize Animations",
+                                        contentDescription = "Sesuaikan animasi",
                                         tint = if (isLiquidGlassChrome()) Color.Black
                                         else accentColor,
                                         modifier = Modifier.size(18.dp)
@@ -4921,7 +4921,7 @@ fun DolphyScreen(viewModel: DolphyViewModel, navController: NavController? = nul
                             ) {
                                 Icon(
                                     Icons.Filled.Info,
-                                    contentDescription = "Stats",
+                                    contentDescription = "Statistik",
                                     tint = if (isLiquidGlassChrome()) Color.Black
                                     else accentColor.copy(alpha = 0.6f),
                                     modifier = Modifier.size(18.dp)
@@ -4946,7 +4946,7 @@ fun DolphyScreen(viewModel: DolphyViewModel, navController: NavController? = nul
                         )
                         Icon(
                             Icons.Filled.Edit,
-                            contentDescription = "Rename",
+                            contentDescription = "Ganti nama",
                             tint = accentColor.copy(alpha = 0.5f),
                             modifier = Modifier.size(16.dp)
                         )
@@ -5552,7 +5552,7 @@ fun DeviceItem(device: BluetoothDevice, onDeviceSelected: (BluetoothDevice) -> U
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = "Device Type", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(icon, contentDescription = "Jenis perangkat", tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -5618,7 +5618,7 @@ fun OnboardingSetupScreen(viewModel: SpamViewModel) {
 
             Image(
                 painter = painterResource(id = R.drawable.dolphin_cool),
-                contentDescription = "Cool Dolphin",
+                contentDescription = "Lumba-lumba keren",
                 modifier = Modifier
                     .size(180.dp)
                     .padding(vertical = 16.dp),
@@ -5696,7 +5696,7 @@ fun OnboardingSetupScreen(viewModel: SpamViewModel) {
                           if (!copied) {
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                             val invisibleName = "\u2800\u2800\u2800"
-                            val clip = ClipData.newPlainText("invisible name", invisibleName)
+                            val clip = ClipData.newPlainText("nama tak terlihat", invisibleName)
                             clipboard.setPrimaryClip(clip)
                             context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
                             copied = true

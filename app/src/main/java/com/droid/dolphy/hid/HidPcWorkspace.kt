@@ -877,7 +877,7 @@ private fun BadHidSection(
                 value = targetUrl,
                 onValueChange = onTargetUrlChange,
                 modifier = Modifier.weight(1f),
-                label = { Text("URL to open") },
+                label = { Text("URL untuk dibuka") },
                 placeholder = { Text("google.com") },
                 singleLine = true,
                 leadingIcon = { Icon(Icons.Default.Language, null) }
@@ -889,7 +889,7 @@ private fun BadHidSection(
             ) {
                 Icon(Icons.Default.Link, null)
                 Spacer(Modifier.width(8.dp))
-                Text("Open")
+                Text("Buka")
             }
         }
 

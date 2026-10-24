@@ -50,7 +50,7 @@ class Connection(
             Log.e("Connection", "Failed to connect", e)
             val handler = Handler(Looper.getMainLooper())
             handler.post {
-                Toast.makeText(context, "Connection failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Koneksi gagal: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -73,13 +73,13 @@ class Connection(
             BluetoothProfile.STATE_CONNECTED -> {
                 hostDevice = device
                 handler.post {
-                    Toast.makeText(context, "Connected: ${device.name}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Terhubung: ${device.name}", Toast.LENGTH_SHORT).show()
                 }
             }
 
             BluetoothProfile.STATE_CONNECTING -> {
                 handler.post {
-                    Toast.makeText(context, "Connecting...", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Menghubungkan...", Toast.LENGTH_SHORT).show()
                 }
             }
 

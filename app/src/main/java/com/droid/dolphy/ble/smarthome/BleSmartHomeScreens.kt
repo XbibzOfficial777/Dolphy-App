@@ -189,7 +189,7 @@ fun BleSmartHomeScanScreen(navController: NavController) {
                             if (isScanning) stopScan() else startScan()
                         }) {
                             if (isScanning) DolphyCircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                            else Icon(Icons.Default.Lightbulb, contentDescription = "Scan")
+                            else Icon(Icons.Default.Lightbulb, contentDescription = "Pindai")
                         }
                     }
                 )
@@ -203,7 +203,7 @@ fun BleSmartHomeScanScreen(navController: NavController) {
                     return@Column
                 }
                 if (bluetoothAdapter.isEnabled != true) {
-                    Text("Bluetooth выключен. Включите Bluetooth.", color = MaterialTheme.colorScheme.onBackground)
+                    Text("Bluetooth nonaktif. Aktifkan Bluetooth.", color = MaterialTheme.colorScheme.onBackground)
                     return@Column
                 }
 
@@ -312,7 +312,7 @@ fun BleSmartHomeDeviceScreen(navController: NavController, address: String) {
                 .done {
                     connecting = false
                     connected = true
-                    status = "Connected"
+                    status = "Terhubung"
                 }
                 .enqueue()
             onDispose {
@@ -357,7 +357,7 @@ fun BleSmartHomeDeviceScreen(navController: NavController, address: String) {
 
             MaterialCard(Modifier.fillMaxWidth(), accentColor = accent, cornerRadius = 18.dp) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Text("Color wheel", fontWeight = FontWeight.SemiBold)
+                    Text("Roda warna", fontWeight = FontWeight.SemiBold)
                     ColorWheel(
                         color = color,
                         onColorChange = {

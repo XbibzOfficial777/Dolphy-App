@@ -172,7 +172,7 @@ private data class HubLanHost(
     val isSelf: Boolean = false,
 )
 
-private const val STOCK_GROUP_NAME = "Стоковые пароли"
+private const val STOCK_GROUP_NAME = "Kata sandi bawaan"
 
 @Serializable
 private data class PasswordGroupDto(
@@ -433,14 +433,14 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
         val isHostTarget = !targetIp.isNullOrBlank()
         val isRouterMode = !isHostTarget || primaryIp == gateway
         if (isHostTarget && !isRouterMode) {
-            appendLog("Подготовка L3/L4 flood → $primaryIp")
-            appendLog("Режим: устройство + DNS/NAT роутера")
+            appendLog("Persiapan L3/L4 flood → $primaryIp")
+            appendLog("Mode: perangkat + DNS/NAT router")
         } else {
             appendLog(context.getString(R.string.network_hub_log_prepare))
-            appendLog("Режим: роутер — DNS-резолвер + NAT + канал")
+            appendLog("Mode: router — DNS resolver + NAT + kanal")
         }
         if (selectedTargetLabel.isNotBlank()) {
-            appendLog("Цель: $selectedTargetLabel")
+            appendLog("Target: $selectedTargetLabel")
         }
         if (dhcpDns.isNotEmpty()) {
             appendLog("DHCP DNS: ${dhcpDns.joinToString()}")
@@ -456,7 +456,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                 .apply { acquire() }
         }.getOrNull()
         if (wakeLock != null || wifiLock != null) {
-            appendLog("Удержание радио: WakeLock/WifiLock активны")
+            appendLog("Menjaga radio: WakeLock/WifiLock aktif")
         }
 
         val job = scope.launch(Dispatchers.IO) {
@@ -465,7 +465,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
             val primaryAddr = runCatching { InetAddress.getByName(primaryIp) }.getOrNull()
             if (primaryAddr == null) {
                 withContext(Dispatchers.Main) {
-                    appendLog("Не удалось резолвить $primaryIp")
+                    appendLog("Gagal me-resolve $primaryIp")
                 }
                 return@launch
             }
@@ -509,7 +509,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                 if (isRouterMode) {
                     appendLog("NAT exhaust → ${externalHosts.size} WAN hosts · bandwidth streams")
                 }
-                appendLog("Half-open SYN × ${if (isRouterMode) 10 else 18} · SSDP/mDNS/SNMP рефлексия")
+                appendLog("Half-open SYN × ${if (isRouterMode) 10 else 18} · SSDP/mDNS/SNMP refleksi")
             }
 
             val localUdpPorts = intArrayOf(53, 67, 68, 123, 1900, 5353, 161, 137, 138)
@@ -847,16 +847,16 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
             if (gateway != null) {
                 hosts[gateway] = HubLanHost(
                     ip = gateway,
-                    title = "Шлюз / роутер",
-                    subtitle = "DNS · DHCP · интернет",
+                    title = "Gateway / router",
+                    subtitle = "DNS · DHCP · internet",
                     isGateway = true,
                 )
             }
             if (self != null) {
                 hosts[self] = HubLanHost(
                     ip = self,
-                    title = "Это устройство",
-                    subtitle = "вы",
+                    title = "Perangkat ini",
+                    subtitle = "Anda",
                     isSelf = true,
                 )
             }
@@ -937,7 +937,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                         ),
                 )
                 lanScanning = false
-                appendLog("Найдено устройств: ${lanHosts.size}")
+                appendLog("Perangkat ditemukan: ${lanHosts.size}")
             }
         }
     }
@@ -1285,7 +1285,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                                 contentPadding = 0.dp
                             ) {
                                 SignalRow(
-                                    title = "WI-FI DoS",
+                                    title = "DoS Wi-Fi",
                                     description = stringResource(R.string.wifi_stress_test),
                                     icon = Icons.Default.FlashOn,
                                     accentColor = MaterialTheme.colorScheme.primary,
@@ -1309,8 +1309,8 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                                 contentPadding = 0.dp
                             ) {
                                 SignalRow(
-                                    title = "DoS устройства",
-                                    description = "DoS конкретного устройства в сети",
+                                    title = "DoS perangkat",
+                                    description = "DoS perangkat tertentu di jaringan",
                                     icon = Icons.Default.WifiOff,
                                     accentColor = Color(0xFFFF6D00),
                                     onClick = {
@@ -1327,7 +1327,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                                 contentPadding = 0.dp
                             ) {
                                 SignalRow(
-                                    title = "Pass Brute",
+                                    title = "Brute Force Kata Sandi",
                                     description = stringResource(R.string.wifi_password_brute),
                                     icon = Icons.Default.SettingsEthernet,
                                     accentColor = Color(0xFFF44336),
@@ -1369,12 +1369,12 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Text(
-                                text = "DoS устройства",
+                                text = "DoS perangkat",
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
                             )
                             Text(
-                                text = "Выберите устройство в сети «${currentDialogNetwork.ssid}»",
+                                text = "Pilih perangkat di jaringan «${currentDialogNetwork.ssid}»",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -1385,14 +1385,14 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                                 ) {
                                     CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                                     Text(
-                                        "Сканирование сети… ${lanHosts.size}",
+                                        "Memindai jaringan… ${lanHosts.size}",
                                         style = MaterialTheme.typography.labelLarge,
                                         color = MaterialTheme.colorScheme.primary,
                                     )
                                 }
                             } else {
                                 Text(
-                                    "Найдено: ${lanHosts.size}",
+                                    "Ditemukan: ${lanHosts.size}",
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -1408,7 +1408,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                                 if (lanHosts.isEmpty() && !lanScanning) {
                                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                         Text(
-                                            "Устройства не найдены.\nПодключитесь к этой Wi‑Fi сети.",
+                                            "Perangkat tidak ditemukan.\nHubungkan ke jaringan Wi-Fi ini.",
                                             textAlign = TextAlign.Center,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
@@ -1492,7 +1492,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                                     enabled = !lanScanning,
                                     modifier = Modifier.weight(1f),
                                 ) {
-                                    Text("Обновить")
+                                    Text("Perbarui")
                                 }
                             }
                         }
@@ -1725,13 +1725,13 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                                     modifier = Modifier.size(48.dp)
                                 )
                                 Text(
-                                    text = "No Wi-Fi connection",
+                                    text = "Tidak ada koneksi Wi-Fi",
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.error
                                 )
                                 Text(
-                                    text = "Connect to a Wi-Fi network first",
+                                    text = "Hubungkan ke jaringan Wi-Fi terlebih dahulu",
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -2158,7 +2158,7 @@ private fun BrutePasswordDialog(
                                         }
                                         if (group.isImported) {
                                             Text(
-                                                text = "imported",
+                                                text = "diimpor",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.primary
                                             )

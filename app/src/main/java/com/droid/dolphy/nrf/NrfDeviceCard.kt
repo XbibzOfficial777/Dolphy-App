@@ -82,7 +82,7 @@ fun NrfDeviceCard(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = device.name ?: "Unknown",
+                        text = device.name ?: "Tidak diketahui",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
@@ -151,7 +151,7 @@ fun NrfDeviceCard(
                 ) {
 
                     DetailRow(
-                        label = "MAC адрес",
+                        label = "Alamat MAC",
                         value = device.address,
                         icon = Icons.Filled.ContentCopy,
                         valueColor = Color.White
@@ -159,14 +159,14 @@ fun NrfDeviceCard(
 
 
                     DetailRow(
-                        label = "Тип устройства",
+                        label = "Jenis perangkat",
                         value = getDeviceTypeLabel(device.type),
                         valueColor = Color.White
                     )
 
 
                     DetailRow(
-                        label = "Сила сигнала",
+                        label = "Kekuatan Sinyal",
                         value = "${device.rssi} dBm (${getSignalStrength(device.rssi)})",
                         valueColor = Color.White
                     )
@@ -174,7 +174,7 @@ fun NrfDeviceCard(
 
                     if (device.manufacturerName != null) {
                         DetailRow(
-                            label = "Производитель",
+                            label = "Produsen",
                             value = device.manufacturerName,
                             valueColor = Color.White
                         )
@@ -201,7 +201,7 @@ fun NrfDeviceCard(
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Уровень батареи",
+                                    text = "Level baterai",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF4CAF50)
@@ -219,7 +219,7 @@ fun NrfDeviceCard(
                     if (device.hasHID || device.hasAudio || device.hasBattery) {
                         Column {
                             Text(
-                                text = "Возможности",
+                                text = "Kapabilitas",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -236,7 +236,7 @@ fun NrfDeviceCard(
                                         color = Color(0xFF2196F3).copy(alpha = 0.2f)
                                     ) {
                                         Text(
-                                            text = "Клавиатура",
+                                            text = "Keyboard",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = Color(0xFF2196F3),
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -249,7 +249,7 @@ fun NrfDeviceCard(
                                         color = Color(0xFF9C27B0).copy(alpha = 0.2f)
                                     ) {
                                         Text(
-                                            text = "Аудио",
+                                            text = "Audio",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = Color(0xFF9C27B0),
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -262,7 +262,7 @@ fun NrfDeviceCard(
                                         color = Color(0xFF4CAF50).copy(alpha = 0.2f)
                                     ) {
                                         Text(
-                                            text = "Батарея",
+                                            text = "Baterai",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = Color(0xFF4CAF50),
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -277,7 +277,7 @@ fun NrfDeviceCard(
                     if (device.gattServices.isNotEmpty()) {
                         Column {
                             Text(
-                                text = "GATT Сервисы (${device.gattServices.size})",
+                                text = "Layanan GATT (${device.gattServices.size})",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -306,7 +306,7 @@ fun NrfDeviceCard(
                                     )
                                     if (service.characteristics.isNotEmpty()) {
                                         Text(
-                                            text = "${service.characteristics.size} характеристик",
+                                            text = "${service.characteristics.size} karakteristik",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = colorScheme.primary,
                                             modifier = Modifier.padding(top = 2.dp)
@@ -316,7 +316,7 @@ fun NrfDeviceCard(
                             }
                             if (device.gattServices.size > 5) {
                                 Text(
-                                    text = "+${device.gattServices.size - 5} ещё сервисов",
+                                    text = "+${device.gattServices.size - 5} layanan lainnya",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = colorScheme.primary,
                                     modifier = Modifier.padding(start = 8.dp, top = 4.dp)
@@ -329,7 +329,7 @@ fun NrfDeviceCard(
                     if (device.serviceUuids.isNotEmpty() && device.gattServices.isEmpty()) {
                         Column {
                             Text(
-                                text = "Рекламируемые сервисы (${device.serviceUuids.size})",
+                                text = "Layanan advertising (${device.serviceUuids.size})",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -351,7 +351,7 @@ fun NrfDeviceCard(
                             }
                             if (device.serviceUuids.size > 3) {
                                 Text(
-                                    text = "+${device.serviceUuids.size - 3} ещё",
+                                    text = "+${device.serviceUuids.size - 3} lainnya",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = colorScheme.primary,
                                     modifier = Modifier.padding(start = 8.dp, top = 4.dp)
@@ -381,13 +381,13 @@ fun NrfDeviceCard(
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Уязвимо",
+                                    text = "Rentan",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFFFF9800)
                                 )
                                 Text(
-                                    text = device.vulnerabilityType?.name ?: "Неизвестно",
+                                    text = device.vulnerabilityType?.name ?: "Tidak diketahui",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = Color(0xFFFF9800)
                                 )
@@ -423,7 +423,7 @@ fun NrfDeviceCard(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "Profile",
+                                    text = "Profil",
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -451,7 +451,7 @@ fun NrfDeviceCard(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "Disconnect",
+                                    text = "Putuskan",
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -476,7 +476,7 @@ fun NrfDeviceCard(
                             ) {
                                 when (connectionState) {
                                     ConnectionState.CONNECTING -> Text(
-                                        text = "Connecting...",
+                                        text = "Menghubungkan…",
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -496,12 +496,12 @@ fun NrfDeviceCard(
                                         fontWeight = FontWeight.Bold
                                     )
                                     ConnectionState.ERROR -> Text(
-                                        text = "Error",
+                                        text = "Kesalahan",
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold
                                     )
                                     ConnectionState.SUCCESS -> Text(
-                                        text = "Success",
+                                        text = "Berhasil",
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -513,7 +513,7 @@ fun NrfDeviceCard(
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
-                                            text = "Connect",
+                                            text = "Hubungkan",
                                             style = MaterialTheme.typography.labelMedium,
                                             fontWeight = FontWeight.Bold
                                         )

@@ -140,7 +140,7 @@ class UiFactory:
     def log_panel(self, text, max_height=200):
         return {"type": "logPanel", "text": str(text), "maxHeight": max_height}
 
-    def alert_dialog(self, show, title, message, confirm_text="OK", dismiss_text="Cancel", on_confirm=None, on_dismiss=None, cancelable=True):
+    def alert_dialog(self, show, title, message, confirm_text="OK", dismiss_text="Batal", on_confirm=None, on_dismiss=None, cancelable=True):
         return {"type": "alertDialog", "show": show, "title": title, "message": message, "confirmText": confirm_text, "dismissText": dismiss_text, "onConfirmId": self._callback(on_confirm), "onDismissId": self._callback(on_dismiss), "cancelable": cancelable}
 
     def empty(self):
@@ -335,7 +335,7 @@ class PluginRuntimeSession:
         if function is None and screen_id == "main":
             function = self._resolve("create_screen", "screen_main")
         if function is None:
-            return json.dumps({"type": "column", "padding": 16, "children": [{"type": "text", "text": "Экран не найден", "style": "headlineSmall"}, {"type": "text", "text": "screen_" + screen_id, "style": "bodyMedium"}]})
+            return json.dumps({"type": "column", "padding": 16, "children": [{"type": "text", "text": "Layar tidak ditemukan", "style": "headlineSmall"}, {"type": "text", "text": "screen_" + screen_id, "style": "bodyMedium"}]})
         result = self._call(function, self.ui, self.bridge, state)
         return json.dumps(result if result is not None else {"type": "empty"}, ensure_ascii=False)
 

@@ -57,7 +57,7 @@ class BleSpamWidgetProvider : AppWidgetProvider() {
 
             appWidgetIds.forEach { id ->
                 val views = RemoteViews(context.packageName, R.layout.ble_spam_widget)
-                views.setTextViewText(R.id.widget_title, "BLE spam")
+                views.setTextViewText(R.id.widget_title, "Spam BLE")
                 views.setTextColor(R.id.widget_title, accentColor)
 
                 views.setImageViewResource(R.id.widget_icon_ios, R.drawable.ble_logo_ios_white)

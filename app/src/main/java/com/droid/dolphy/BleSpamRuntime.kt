@@ -248,10 +248,10 @@ object BleSpamRuntime {
         val text = "Spam: ${activeSections.joinToString(", ")}"
         val notification = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("BLE Spam")
+            .setContentTitle("Spam BLE")
             .setContentText(text)
             .setOngoing(true)
-            .addAction(0, "Остановить", stopPending)
+            .addAction(0, "Hentikan", stopPending)
             .build()
 
         NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)

@@ -117,7 +117,7 @@ fun LoadingScreen() {
                 modifier = Modifier.size(42.dp),
                 frameDelayMs = 200L,
                 tintColor = MaterialTheme.colorScheme.primary,
-                contentDescription = "IR loading animation"
+                contentDescription = "Animasi pemuatan IR"
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
@@ -1231,7 +1231,7 @@ fun IRFlipperHome(navController: NavController) {
         Triple(Icons.Default.FolderOpen, userRemotesTitle, "other/user_ir_remotes"),
     )
     val catRows = buildList {
-        add(Triple(Icons.Default.Tv, "Телевизоры", "other/ir_tv_home"))
+        add(Triple(Icons.Default.Tv, "TV", "other/ir_tv_home"))
         categories!!.forEach { catId ->
             add(
                 Triple(
@@ -2209,7 +2209,7 @@ fun UniversalRemoteCategoryScreen(navController: NavController, categoryIdEnc: S
                             .align(Alignment.CenterHorizontally),
                         frameDelayMs = 333L,
                         tintColor = MaterialTheme.colorScheme.primary,
-                        contentDescription = "IR sending animation"
+                        contentDescription = "Animasi pengiriman IR"
                     )
                     Text("$sendingAction: $sentSignals / $totalSignals")
                     DolphyLinearProgressIndicator(
@@ -3966,7 +3966,7 @@ fun IRJammerScreen(navController: NavController? = null) {
                                             withContext(Dispatchers.Main) {
                                                 sentCommands = index + 1
                                                 statusMessage = context.getString(R.string.ir_jammer_sending_signals) +
-                                                    " · цикл $cycle"
+                                                    " · siklus $cycle"
                                             }
                                             delay(8)
                                         }

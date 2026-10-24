@@ -1826,7 +1826,7 @@ fun ExpressiveFloatingToolbar(
                     selectedSquareColor = selectedSquare,
                     unselectedContentColor = colorScheme.onSurfaceVariant,
                     itemSize = itemSize,
-                    contentDescription = "Other",
+                    contentDescription = "Lainnya",
                 )
                 FloatingToolbarItem(
                     selected = settingsSelected,
@@ -1839,7 +1839,7 @@ fun ExpressiveFloatingToolbar(
                     selectedSquareColor = selectedSquare,
                     unselectedContentColor = colorScheme.onSurfaceVariant,
                     itemSize = itemSize,
-                    contentDescription = "Settings",
+                    contentDescription = "Pengaturan",
                 )
             }
         }

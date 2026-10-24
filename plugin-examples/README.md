@@ -1,33 +1,25 @@
-# Dolphy plugin examples
+# Contoh plugin Dolphy
 
-Each `.dolphyplugin` file can be opened directly with Dolphy. Review its readable Python source and requested permissions before installation.
+Setiap file `.dolphyplugin` dapat dibuka langsung dengan Dolphy. Periksa source code Python yang dapat dibaca dan izin yang diminta sebelum instalasi.
 
-Plugins are executable user-provided code with broad access to application and device capabilities. Install plugins only from trusted sources and inspect their source code before use. The Dolphy developer is not responsible for damage caused by malicious, modified or untrusted plugins.
+Plugin adalah kode buatan pengguna yang dapat dieksekusi dan memiliki akses luas ke kapabilitas aplikasi serta perangkat. Instal plugin hanya dari sumber tepercaya dan periksa source code-nya sebelum digunakan. Pengembang Dolphy tidak bertanggung jawab atas kerusakan yang disebabkan oleh plugin berbahaya, termodifikasi, atau tidak tepercaya.
 
-## Scanner examples
+## Contoh pemindai
 
 ### Wi-Fi Scanner MD3E
 
-[Download the plugin](wifi_scanner_md3e.dolphyplugin)
+[Unduh plugin](wifi_scanner_md3e.dolphyplugin)
 
-Uses the native Dolphy device bridge and Material 3 Expressive UI. It displays the current connection, nearby networks, SSID and BSSID, RSSI, signal percentage, security type, band, frequency, channel, channel width and raw capability flags. The list supports All, Secure and Open filters.
+Menggunakan bridge perangkat Dolphy native dan UI Material 3 Expressive. Plugin menampilkan koneksi saat ini, jaringan di sekitar, SSID dan BSSID, RSSI, persentase sinyal, jenis keamanan, band, frekuensi, channel, lebar channel, serta flag kapabilitas mentah. Daftar mendukung filter Semua, Aman, dan Terbuka.
 
-Required permission group: `wifi`.
+Grup izin yang diperlukan: `wifi`.
 
 ### BLE Scanner DEX MD3E
 
-[Download the plugin](ble_scanner_dex_md3e.dolphyplugin)
+[Unduh plugin](ble_scanner_dex_md3e.dolphyplugin)
 
-Uses the native batched BLE scanner and loads an embedded DEX class from the same text plugin file. The DEX analyzer enriches advertisements with signal quality, estimated distance, payload size, advertisement type and common manufacturer names. The detail screen includes address, RSSI, TX power, connectability, service UUIDs, manufacturer records and the raw payload.
+Menggunakan pemindai BLE batch native dan memuat class DEX tersemat dari file plugin teks yang sama. Analisis DEX memperkaya advertising dengan kualitas sinyal, perkiraan jarak, ukuran payload, jenis advertising, dan nama produsen umum. Layar detail mencakup alamat, RSSI, TX power, kemampuan koneksi, UUID service, record produsen, dan payload mentah.
 
-Required permission groups: `bluetooth`, `dex`.
+Grup izin yang diperlukan: `bluetooth`, `dex`.
 
-The embedded class is `com.dolphy.examples.ble.BleAnalyzer`. Its readable Java source is available in [`dex-source`](dex-source/com/dolphy/examples/ble/BleAnalyzer.java). The plugin verifies the embedded DEX with SHA-256 before loading it.
-
-## Примеры сканеров
-
-Плагины являются исполняемым пользовательским кодом и могут получать широкий доступ к функциям приложения и устройства. Устанавливайте плагины только из доверенных источников и проверяйте их исходный код. Разработчик Dolphy не несёт ответственности за ущерб, нанесённый вредоносными, изменёнными или недоверенными плагинами.
-
-`Wi-Fi Scanner MD3E` показывает подробности текущего подключения и найденных сетей, включая защиту, диапазон, канал, ширину канала и уровень сигнала.
-
-`BLE Scanner DEX MD3E` сканирует BLE-рекламу, загружает анализатор из встроенного DEX и показывает адрес, RSSI, TX power, сервисы, manufacturer data, тип рекламы и raw payload.
+Class tersemat adalah `com.dolphy.examples.ble.BleAnalyzer`. Source code Java yang dapat dibaca tersedia di [`dex-source`](dex-source/com/dolphy/examples/ble/BleAnalyzer.java). Plugin memverifikasi DEX tersemat dengan SHA-256 sebelum memuatnya.

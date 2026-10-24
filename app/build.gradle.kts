@@ -2,6 +2,8 @@ import java.net.URI
 import java.io.InputStream
 import java.io.OutputStream
 
+val releaseKeystoreFile = System.getenv("DOLPHY_KEYSTORE_FILE")
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -35,6 +37,16 @@ android {
 
     }
 
+    signingConfigs {
+        create("release") {
+            if (!releaseKeystoreFile.isNullOrBlank()) {
+                storeFile = file(releaseKeystoreFile)
+                storePassword = System.getenv("DOLPHY_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("DOLPHY_KEY_ALIAS")
+                keyPassword = System.getenv("DOLPHY_KEY_PASSWORD")
+            }
+        }
+    }
 
     buildTypes {
         debug {
@@ -49,7 +61,13 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             isProfileable = false
-            signingConfig = signingConfigs.getByName("debug")
+            // CI uses the persistent release key from encrypted GitHub Actions secrets.
+            // Local builds without those variables retain the upstream debug signing behavior.
+            signingConfig = if (releaseKeystoreFile.isNullOrBlank()) {
+                signingConfigs.getByName("debug")
+            } else {
+                signingConfigs.getByName("release")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

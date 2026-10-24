@@ -107,8 +107,8 @@ fun DolphyZeroScreen(navController: NavController) {
                 ZeroMenuItem("IR", "IR Storm", ZeroAction.Navigate("ir_storm")),
                 ZeroMenuItem("IJ", "IR Jammer", ZeroAction.Navigate("ir_jammer")),
                 ZeroMenuItem("AR", "Archive", ZeroAction.Navigate("user_ir_remotes")),
-                ZeroMenuItem("JS", "JS Runner", ZeroAction.ShowMessage("JS Runner не реализован в Android-версии")),
-                ZeroMenuItem("UP", "Updater", ZeroAction.ShowMessage("Updater доступен только в firmware"))
+                ZeroMenuItem("JS", "JS Runner", ZeroAction.ShowMessage("JS Runner tidak diimplementasikan dalam versi Android")),
+                ZeroMenuItem("UP", "Updater", ZeroAction.ShowMessage("Updater hanya tersedia di firmware"))
             )
         )
     }
@@ -121,7 +121,7 @@ fun DolphyZeroScreen(navController: NavController) {
                 ZeroMenuItem("IR", "Infrared", ZeroAction.Navigate("ir_flipper_home")),
                 ZeroMenuItem("RF", "125 kHz RFID", ZeroAction.Navigate("nfc_tools")),
                 ZeroMenuItem("NF", "NFC", ZeroAction.Navigate("nfc_tools")),
-                ZeroMenuItem("U2", "U2F", ZeroAction.ShowMessage("U2F не поддерживается Android-версией")),
+                ZeroMenuItem("U2", "U2F", ZeroAction.ShowMessage("U2F tidak didukung dalam versi Android")),
                 ZeroMenuItem("AR", "Archive", ZeroAction.Navigate("user_ir_remotes"))
             )
         )
@@ -201,7 +201,7 @@ fun DolphyZeroScreen(navController: NavController) {
             DolphyIconButton(onClick = { goBack() }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = "Kembali",
                     tint = Color.White
                 )
             }
@@ -230,7 +230,7 @@ fun DolphyZeroScreen(navController: NavController) {
                         ) {
                             TopActionButton(
                                 icon = Icons.Default.CameraAlt,
-                                label = "Apps",
+                                label = "Aplikasi",
                                 accent = accent,
                                 onClick = { if(!isLocked) openAction(ZeroAction.OpenMenu(appsMenu)) }
                             )
@@ -317,7 +317,7 @@ private fun MiniFirmwareScreen(
         Column(modifier = Modifier.fillMaxSize()) {
             if(isLocked) {
                 Text(
-                    text = "LOCKED",
+                    text = "TERKUNCI",
                     color = accent,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
@@ -325,21 +325,21 @@ private fun MiniFirmwareScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Flipper Zero style lockscreen",
+                    text = "Layar kunci gaya Flipper Zero",
                     color = accent.copy(alpha = 0.85f),
                     fontFamily = FontFamily.Monospace,
                     style = MaterialTheme.typography.bodySmall
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Press CENTER to unlock",
+                    text = "Tekan CENTER untuk membuka kunci",
                     color = accent.copy(alpha = 0.85f),
                     fontFamily = FontFamily.Monospace,
                     style = MaterialTheme.typography.bodySmall
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = "Only available features launch.\nHardware-only modules stay disabled.",
+                    text = "Hanya fitur yang tersedia yang dapat dibuka.\nModul khusus perangkat keras tetap dinonaktifkan.",
                     color = accent.copy(alpha = 0.65f),
                     fontFamily = FontFamily.Monospace,
                     style = MaterialTheme.typography.labelSmall
@@ -363,7 +363,7 @@ private fun MiniFirmwareScreen(
             Spacer(modifier = Modifier.height(8.dp))
             if(hasAbove) {
                 Text(
-                    text = "^ more",
+                    text = "^ lebih banyak",
                     color = accent.copy(alpha = 0.65f),
                     fontFamily = FontFamily.Monospace,
                     style = MaterialTheme.typography.labelSmall
@@ -394,7 +394,7 @@ private fun MiniFirmwareScreen(
             if(hasBelow) {
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = "v more",
+                    text = "v lebih",
                     color = accent.copy(alpha = 0.65f),
                     fontFamily = FontFamily.Monospace,
                     style = MaterialTheme.typography.labelSmall

@@ -400,7 +400,7 @@ fun AudioScannerScreen(navController: NavController) {
                             ) {
                                 Icon(
                                     Icons.Default.Refresh,
-                                    contentDescription = "Restart",
+                                    contentDescription = "Mulai ulang",
                                     tint = Color.White,
                                     modifier = Modifier.size(48.dp)
                                 )
@@ -633,7 +633,7 @@ fun RecordingsList(context: Context, accentColor: Color) {
                                     type = "audio/*"
                                     putExtra(Intent.EXTRA_STREAM, uri)
                                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }, "Поделиться"))
+                                }, "Berbagi"))
                             }) { Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(20.dp)) }
 
                             DolphyIconButton(onClick = {

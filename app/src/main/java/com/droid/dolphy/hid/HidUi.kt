@@ -122,7 +122,7 @@ fun Combo(
                 mode = if (mode == "keyboard") "touchpad" else "keyboard"
             },
             label = if (mode == "keyboard") "TP" else "KB",
-            imageAlt = "Change Mode",
+            imageAlt = "Ganti Mode",
             modifier = modifier,
         )
     }
@@ -130,8 +130,8 @@ fun Combo(
     val settingsPlum: @Composable (Modifier) -> Unit = { modifier ->
         Plum(
             onUp = {   },
-            label = "SET",
-            imageAlt = "Settings",
+            label = "ATUR",
+            imageAlt = "Pengaturan",
             modifier = modifier,
         )
     }
@@ -608,7 +608,7 @@ private fun ScreenshotSpamScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "ATTACK IN PROGRESS",
+                            text = "SERANGAN BERLANGSUNG",
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Black,
                             color = MaterialTheme.colorScheme.error
@@ -618,7 +618,7 @@ private fun ScreenshotSpamScreen(
             }
 
             Text(
-                "Payloads",
+                "Payload",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(start = 8.dp, top = if (anyActive) 0.dp else 16.dp)
@@ -664,7 +664,7 @@ private fun ScreenshotSpamScreen(
 
             BadHidActionCard(
                 modifier = Modifier.fillMaxWidth(),
-                title = "Phantom Clicks",
+                title = "Klik Phantom",
                 icon = Icons.Default.Mouse,
                 isActive = phantomClicksActive,
                 onClick = { phantomClicksActive = !phantomClicksActive },
@@ -672,7 +672,7 @@ private fun ScreenshotSpamScreen(
             )
 
             Text(
-                "Quick Actions",
+                "Tindakan Cepat",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(start = 8.dp, top = 8.dp)
@@ -688,7 +688,7 @@ private fun ScreenshotSpamScreen(
                         value = targetUrl,
                         onValueChange = { targetUrl = it },
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("URL to open") },
+                        label = { Text("URL untuk dibuka") },
                         placeholder = { Text("https://...") },
                         leadingIcon = { Icon(Icons.Default.Language, contentDescription = null) },
                         shape = RoundedCornerShape(16.dp),
@@ -728,7 +728,7 @@ private fun ScreenshotSpamScreen(
                     ) {
                         Icon(Icons.Default.Link, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Open Link")
+                        Text("Buka tautan")
                     }
                 }
             }
@@ -746,12 +746,12 @@ private fun ScreenshotSpamScreen(
             ) {
                 Icon(Icons.Default.Mouse, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Center Cursor")
+                Text("Pusatkan kursor")
             }
 
             if (scripts.isNotEmpty()) {
                 Text(
-                    "Ducky Scripts",
+                    "DuckyScript",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(start = 8.dp, top = 8.dp)

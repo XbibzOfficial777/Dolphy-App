@@ -1,84 +1,85 @@
 const sdkText = {
-  en: {
-    search: 'Search methods, parameters or capabilities',
-    all: 'All', methods: 'methods', publicApi: 'Public API', noResults: 'No API methods match this query.',
-    parameters: 'Parameters', returns: 'Returns', callback: 'Callback', requirements: 'Requirements', example: 'Example',
-    noParameters: 'No parameters.', optional: 'optional', defaultValue: 'Default',
-    callbackReturn: 'The call returns immediately. The final result is delivered to the callback.',
-    callbackJson: 'A String callback normally receives JSON text. Convert it with json.loads(str(value)). A Boolean callback receives True or False.',
-    booleanCheck: 'Boolean state: true when the condition is satisfied, otherwise false.',
-    booleanAction: 'true when the operation was accepted; false when it is unsupported, denied or failed.',
-    jsonReturn: 'JSON text. Convert it with json.loads(str(value)).',
-    nullableReturn: 'The declared value or None when it is unavailable or the operation fails.',
-    unitReturn: 'No return value.', nodeReturn: 'A JSON-compatible native UI node rendered by Dolphy.',
-    directReturn: 'Returns the declared Java/Python value. Java objects are exposed through Chaquopy.',
-    general: 'Runs in the plugin process. Handle Java and Python exceptions around direct platform calls.',
-    ui: 'No Android permission is required. Return this node from a plugin screen or another UI builder.',
-    files: 'String paths are relative to this plugin private directory unless File or Uri is explicitly required.',
-    bluetooth: 'Requires compatible Bluetooth hardware and relevant Android permissions. Android 12+ separates scan, connect and advertise access.',
-    wifi: 'Requires Wi-Fi hardware. Scan and nearby operations can require Location or Nearby Wi-Fi permission depending on Android version.',
-    nfc: 'Requires NFC hardware and an enabled adapter. Tag methods need a tag delivered to Dolphy while the plugin is active.',
-    infrared: 'Requires a built-in IR emitter or a plugin-provided external transmitter service.',
-    network: 'Requires network access. Validate untrusted hosts, payloads and size limits in plugin code.',
-    root: 'Requires working Root. Command callbacks use {ok, code, out, err, via}; always check ok and code.',
-    shizuku: 'Requires Shizuku to be running and permission granted to Dolphy.',
-    notification: 'Android 13+ can require POST_NOTIFICATIONS before a notification is visible.',
-    location: 'Location data can require runtime location permission and an enabled provider.',
-    sensor: 'Stop listeners during unload to prevent leaks and background battery use.',
-    dex: 'Runs trusted native code in the Dolphy process. Verify SHA-256, keep payloads private and release every resource during unload.',
-    resource: 'This call can own a long-lived resource. Stop it explicitly or call release() from on_plugin_unload.',
-    does: 'Performs', checks: 'Checks', reads: 'Reads', writes: 'Writes', starts: 'Starts', stops: 'Stops', opens: 'Opens', creates: 'Creates', deletes: 'Deletes', sends: 'Sends', registers: 'Registers', through: 'through'
-  },
-  ru: {
-    search: 'Поиск по методам, параметрам и возможностям',
-    all: 'Все', methods: 'методов', publicApi: 'Публичный API', noResults: 'По этому запросу методы API не найдены.',
-    parameters: 'Параметры', returns: 'Возвращает', callback: 'Callback', requirements: 'Условия и ограничения', example: 'Пример',
-    noParameters: 'Параметров нет.', optional: 'необязательный', defaultValue: 'По умолчанию',
-    callbackReturn: 'Вызов завершается сразу, итоговый результат приходит в callback.',
-    callbackJson: 'Callback типа String обычно получает JSON-текст: преобразуйте его через json.loads(str(value)). Boolean-callback получает True или False.',
-    booleanCheck: 'Булево состояние: true, когда условие выполнено, иначе false.',
-    booleanAction: 'true, если операция принята; false, если она не поддерживается, запрещена или завершилась ошибкой.',
-    jsonReturn: 'JSON-текст. Преобразуйте его через json.loads(str(value)).',
-    nullableReturn: 'Объявленное значение либо None, если оно недоступно или операция завершилась ошибкой.',
-    unitReturn: 'Значение не возвращается.', nodeReturn: 'JSON-совместимый узел нативного интерфейса, который отрисовывает Dolphy.',
-    directReturn: 'Возвращает объявленное Java/Python-значение. Java-объекты передаются через Chaquopy.',
-    general: 'Выполняется в процессе плагина. Прямые платформенные вызовы следует оборачивать в обработку Java- и Python-исключений.',
-    ui: 'Разрешения Android не нужны. Верните узел из экрана плагина или другого UI-билдера.',
-    files: 'Строковые пути относятся к приватной папке этого плагина, если явно не требуется File или Uri.',
-    bluetooth: 'Нужно совместимое Bluetooth-оборудование и соответствующие разрешения Android. В Android 12+ scan, connect и advertise разделены.',
-    wifi: 'Нужно Wi-Fi-оборудование. Сканирование и nearby-операции могут требовать Location или Nearby Wi-Fi в зависимости от Android.',
-    nfc: 'Нужны NFC и включённый адаптер. Для методов метки Dolphy должен получить Tag, пока плагин активен.',
-    infrared: 'Нужен встроенный ИК-передатчик либо внешний передатчик, предоставленный плагином как сервис.',
-    network: 'Нужен доступ к сети. Проверяйте недоверенные адреса, данные и ограничения размера.',
-    root: 'Нужен рабочий Root. Callback команд содержит {ok, code, out, err, via}; всегда проверяйте ok и code.',
-    shizuku: 'Shizuku должен быть запущен, а Dolphy должно быть выдано разрешение.',
-    notification: 'В Android 13+ для видимого уведомления может потребоваться POST_NOTIFICATIONS.',
-    location: 'Для геоданных могут требоваться runtime-разрешение и включённый провайдер.',
-    sensor: 'Останавливайте listeners при выгрузке, чтобы не оставлять фоновые задачи и расход батареи.',
-    dex: 'Запускает доверенный нативный код в процессе Dolphy. Проверяйте SHA-256, храните нагрузку приватно и освобождайте все ресурсы при выгрузке.',
-    resource: 'Вызов может создать долгоживущий ресурс. Остановите его явно либо вызовите release() в on_plugin_unload.',
-    does: 'Выполняет', checks: 'Проверяет', reads: 'Читает', writes: 'Записывает', starts: 'Запускает', stops: 'Останавливает', opens: 'Открывает', creates: 'Создаёт', deletes: 'Удаляет', sends: 'Отправляет', registers: 'Регистрирует', through: 'через'
+  "id": {
+    "search": "Cari metode, parameter, atau kapabilitas",
+    "all": "Semua",
+    "methods": "metode",
+    "publicApi": "API publik",
+    "noResults": "Tidak ada metode API yang cocok dengan pencarian ini.",
+    "parameters": "Parameter",
+    "returns": "Return",
+    "callback": "Callback",
+    "requirements": "Persyaratan",
+    "example": "Contoh",
+    "noParameters": "Tidak ada parameter.",
+    "optional": "opsional",
+    "defaultValue": "Default",
+    "callbackReturn": "Pemanggilan langsung selesai. Hasil akhir dikirim ke callback.",
+    "callbackJson": "Callback String biasanya menerima teks JSON. Konversikan dengan json.loads(str(value)). Callback Boolean menerima True atau False.",
+    "booleanCheck": "Status Boolean: true jika kondisi terpenuhi, selain itu false.",
+    "booleanAction": "true jika operasi diterima; false jika tidak didukung, ditolak, atau gagal.",
+    "jsonReturn": "Teks JSON. Konversikan dengan json.loads(str(value)).",
+    "nullableReturn": "Nilai yang dideklarasikan atau None jika tidak tersedia atau operasi gagal.",
+    "unitReturn": "Tidak ada nilai return.",
+    "nodeReturn": "Node UI native yang kompatibel dengan JSON dan dirender oleh Dolphy.",
+    "directReturn": "Mengembalikan nilai Java/Python yang dideklarasikan. Object Java tersedia melalui Chaquopy.",
+    "general": "Berjalan dalam proses plugin. Tangani exception Java dan Python di sekitar pemanggilan platform langsung.",
+    "ui": "Izin Android tidak diperlukan. Kembalikan node ini dari layar plugin atau builder UI lain.",
+    "files": "Path string bersifat relatif terhadap direktori privat plugin ini kecuali File atau Uri secara eksplisit diperlukan.",
+    "bluetooth": "Memerlukan perangkat keras Bluetooth kompatibel dan izin Android terkait. Android 12+ memisahkan akses scan, connect, dan advertise.",
+    "wifi": "Memerlukan perangkat keras Wi-Fi. Operasi scan dan nearby dapat memerlukan izin Location atau Nearby Wi-Fi, bergantung pada versi Android.",
+    "nfc": "Memerlukan perangkat keras NFC dan adaptor aktif. Metode tag memerlukan tag yang diteruskan ke Dolphy saat plugin aktif.",
+    "infrared": "Memerlukan pemancar IR bawaan atau service pemancar eksternal yang disediakan plugin.",
+    "network": "Memerlukan akses jaringan. Validasi host, payload, dan batas ukuran yang tidak tepercaya dalam kode plugin.",
+    "root": "Memerlukan Root yang berfungsi. Callback perintah menggunakan {ok, code, out, err, via}; selalu periksa ok dan code.",
+    "shizuku": "Shizuku harus berjalan dan izin telah diberikan kepada Dolphy.",
+    "notification": "Android 13+ dapat memerlukan POST_NOTIFICATIONS sebelum notifikasi ditampilkan.",
+    "location": "Data lokasi dapat memerlukan izin lokasi runtime dan provider yang aktif.",
+    "sensor": "Hentikan listener saat unload untuk mencegah kebocoran dan penggunaan baterai di latar belakang.",
+    "dex": "Menjalankan kode native tepercaya dalam proses Dolphy. Verifikasi SHA-256, simpan payload secara privat, dan lepaskan semua resource saat unload.",
+    "resource": "Pemanggilan ini dapat memiliki resource berumur panjang. Hentikan secara eksplisit atau panggil release() dari on_plugin_unload.",
+    "does": "Menjalankan",
+    "checks": "Memeriksa",
+    "reads": "Membaca",
+    "writes": "Menulis",
+    "starts": "Memulai",
+    "stops": "Menghentikan",
+    "opens": "Membuka",
+    "creates": "Membuat",
+    "deletes": "Menghapus",
+    "sends": "Mengirim",
+    "registers": "Mendaftarkan",
+    "through": "melalui"
   }
 }
 
 const sdkParams = {
-  callback: ['Function receiving the asynchronous result.', 'Функция, получающая асинхронный результат.'],
-  onEvent: ['Function called for each state or data event.', 'Функция для каждого события состояния или данных.'],
-  onDeviceJs: ['Function receiving a JSON batch of discovered devices.', 'Функция, получающая JSON-пакет найденных устройств.'],
-  onResult: ['Function receiving the asynchronous result.', 'Функция, получающая асинхронный результат.'],
-  cb: ['Event receiver; pass None to detach it.', 'Получатель событий; передайте None, чтобы отключить его.'],
-  path: ['Path inside plugin-private storage.', 'Путь внутри приватного хранилища плагина.'],
-  address: ['Bluetooth MAC address.', 'MAC-адрес Bluetooth-устройства.'],
-  serviceUuid: ['GATT service UUID.', 'UUID сервиса GATT.'], charUuid: ['GATT characteristic UUID.', 'UUID характеристики GATT.'], descUuid: ['GATT descriptor UUID.', 'UUID дескриптора GATT.'],
-  scanId: ['Stable identifier used to stop this scan.', 'Постоянный идентификатор для последующей остановки сканирования.'],
-  command: ['Shell command text.', 'Текст shell-команды.'], enabled: ['Target enabled state.', 'Требуемое состояние включения.'],
-  hex: ['Even-length hexadecimal bytes.', 'Байты в HEX-строке чётной длины.'], payloadHex: ['Advertising payload as hexadecimal bytes.', 'Advertising payload в виде HEX-строки.'],
-  recordsJson: ['JSON array describing NDEF records.', 'JSON-массив с описанием NDEF-записей.'], headersJson: ['JSON object with HTTP headers, or None.', 'JSON-объект HTTP-заголовков либо None.'],
-  maxBytes: ['Maximum accepted byte count.', 'Максимально допустимое число байт.'], timeoutMs: ['Timeout in milliseconds.', 'Таймаут в миллисекундах.'],
-  freqHz: ['Carrier frequency in hertz.', 'Несущая частота в герцах.'], pattern: ['Alternating mark and space durations in microseconds.', 'Чередующиеся длительности импульса и паузы в микросекундах.'],
-  key: ['Stable key or platform property name.', 'Постоянный ключ либо имя системного свойства.'], value: ['New value.', 'Новое значение.'],
-  url: ['Absolute URL.', 'Абсолютный URL.'], on_change: ['Callback receiving the new component value.', 'Callback, получающий новое значение компонента.'],
-  on_click: ['Zero-argument click callback.', 'Callback без аргументов при нажатии.'], on_select: ['Callback receiving the selected index or value.', 'Callback, получающий выбранный индекс или значение.']
+  "callback": "Fungsi yang menerima hasil asinkron.",
+  "onEvent": "Fungsi yang dipanggil untuk setiap event state atau data.",
+  "onDeviceJs": "Fungsi yang menerima batch JSON perangkat yang ditemukan.",
+  "onResult": "Fungsi yang menerima hasil asinkron.",
+  "cb": "Penerima event; berikan None untuk melepaskannya.",
+  "path": "Path di dalam penyimpanan privat plugin.",
+  "address": "Alamat MAC Bluetooth.",
+  "serviceUuid": "UUID service GATT.",
+  "charUuid": "UUID characteristic GATT.",
+  "descUuid": "UUID descriptor GATT.",
+  "scanId": "Identifier stabil yang digunakan untuk menghentikan pemindaian ini.",
+  "command": "Teks perintah shell.",
+  "enabled": "Status aktif yang diinginkan.",
+  "hex": "Byte heksadesimal dengan jumlah digit genap.",
+  "payloadHex": "Payload advertising dalam bentuk byte heksadesimal.",
+  "recordsJson": "Array JSON yang mendeskripsikan record NDEF.",
+  "headersJson": "Object JSON berisi header HTTP, atau None.",
+  "maxBytes": "Jumlah byte maksimum yang diterima.",
+  "timeoutMs": "Timeout dalam milidetik.",
+  "freqHz": "Frekuensi carrier dalam hertz.",
+  "pattern": "Durasi mark dan space yang bergantian dalam mikrodetik.",
+  "key": "Kunci stabil atau nama properti platform.",
+  "value": "Nilai baru.",
+  "url": "URL absolut.",
+  "on_change": "Callback yang menerima nilai baru komponen.",
+  "on_click": "Callback click tanpa argumen.",
+  "on_select": "Callback yang menerima indeks atau nilai yang dipilih."
 }
 
 function sdkEscape(value) {
@@ -149,7 +150,7 @@ function sdkDescription(parsed, owner, text, lang) {
   else if (/(Delete|Remove|Uninstall|Kill)/.test(name)) verb = text.deletes
   else if (/(Send|Transmit|Notify|Broadcast)/.test(name)) verb = text.sends
   else if (/(Register|Hook|Provide)/.test(name)) verb = text.registers
-  return lang === 'ru' ? verb + ' операцию «' + sdkWords(name) + '» ' + text.through + ' ' + owner + '.' : verb + ' the ' + sdkWords(name) + ' operation ' + text.through + ' ' + owner + '.'
+  return verb + ' operasi «' + sdkWords(name) + '» ' + text.through + ' ' + owner + '.'
 }
 
 function sdkRequirement(parsed, group, text) {
@@ -238,7 +239,7 @@ function sdkCatalog() {
 function sdkRender() {
   const root = document.querySelector('[data-sdk-reference]')
   if (!root) return
-  const lang = document.documentElement.lang === 'ru' ? 'ru' : 'en'
+  const lang = 'id'
   const text = sdkText[lang]
   const query = (root.querySelector('[data-sdk-search]').value || '').trim().toLowerCase()
   const selected = root.dataset.layer || 'all'
@@ -252,8 +253,8 @@ function sdkRender() {
   list.innerHTML = entries.map(item => {
     const parsed = item.parsed
     const params = parsed.params.length ? parsed.params.map(param => {
-      const known = sdkParams[param.name]?.[lang === 'ru' ? 1 : 0]
-      const fallback = lang === 'ru' ? 'Значение «' + param.name + '» типа ' + param.type + '.' : 'The ' + param.name + ' value passed as ' + param.type + '.'
+      const known = sdkParams[param.name]
+      const fallback = 'Nilai ' + param.name + ' yang diteruskan sebagai ' + param.type + '.'
       const flags = [param.type.endsWith('?') ? text.optional : '', param.defaultValue ? text.defaultValue + ': ' + param.defaultValue : ''].filter(Boolean).join(' · ')
       return '<div><code>' + sdkEscape(param.name) + '</code><span><b>' + sdkEscape(param.type) + '</b> · ' + sdkEscape(known || fallback) + (flags ? '<small>' + sdkEscape(flags) + '</small>' : '') + '</span></div>'
     }).join('') : '<p class="sdk-none">' + text.noParameters + '</p>'
@@ -270,7 +271,7 @@ function sdkInit() {
   const search = root.querySelector('[data-sdk-search]')
   const filters = root.querySelector('[data-sdk-filters]')
   const synchronize = () => {
-    const text = sdkText[document.documentElement.lang === 'ru' ? 'ru' : 'en']
+    const text = sdkText.id
     search.placeholder = text.search
     root.querySelector('[data-sdk-all]').textContent = text.all
     sdkRender()

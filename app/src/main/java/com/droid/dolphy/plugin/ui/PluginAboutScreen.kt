@@ -57,7 +57,7 @@ fun PluginAboutScreen(navController: NavController) {
                         accent = accent,
                     )
                 }
-                item { SectionTitle("Минимальный плагин") }
+                item { SectionTitle("Plugin minimal") }
                 item {
                     CodeBlock(
                         """
@@ -93,12 +93,12 @@ fun PluginAboutScreen(navController: NavController) {
                         """.trimIndent(),
                     )
                 }
-                item { SectionTitle("Полный доступ") }
+                item { SectionTitle("Akses penuh") }
                 item {
                     GuideCard(
                         icon = Icons.Default.Terminal,
-                        title = "Android, Root и Shizuku",
-                        body = "api.getContext(), api.getApplicationContext(), api.getClassLoader(), api.getAndroid() и api.getDevice() возвращают реальные Java-объекты Dolphy. Команды доступны через api.shellExec(), api.rootExec(), api.shizukuExec() и api.smartExec().",
+                        title = "Android, Root dan Shizuku",
+                        body = "api.getContext(), api.getApplicationContext(), api.getClassLoader(), api.getAndroid(), dan api.getDevice() mengembalikan objek Java Dolphy yang sebenarnya. Perintah tersedia melalui api.shellExec(), api.rootExec(), api.shizukuExec(), dan api.smartExec().",
                         accent = accent,
                     )
                 }
@@ -117,29 +117,29 @@ fun PluginAboutScreen(navController: NavController) {
                         """.trimIndent(),
                     )
                 }
-                item { SectionTitle("Радиоинтерфейсы") }
+                item { SectionTitle("Antarmuka radio") }
                 item {
                     GuideCard(
                         icon = Icons.Default.Bluetooth,
-                        title = "Bluetooth и BLE",
-                        body = "Через api.getAndroid() доступны advertising, GATT client/server, RFCOMM, bonding и сведения об адаптере. api.getDevice() предоставляет BLE scan, возможности оборудования и системные операции.",
+                        title = "Bluetooth dan BLE",
+                        body = "Melalui api.getAndroid(), tersedia advertising, GATT client/server, RFCOMM, bonding, dan informasi adaptor. api.getDevice() menyediakan pemindaian BLE, kapabilitas perangkat keras, dan operasi sistem.",
                         accent = accent,
                     )
                 }
                 item {
                     GuideCard(
                         icon = Icons.Default.Wifi,
-                        title = "Wi-Fi и сеть",
-                        body = "Доступны результаты Wi-Fi-сканирования, интерфейсы, DHCP, каналы, NSD, сокеты, HTTP и прямой доступ к Android WifiManager. Root и Shizuku позволяют использовать системные сетевые инструменты устройства.",
+                        title = "Wi-Fi dan jaringan",
+                        body = "Tersedia hasil pemindaian Wi-Fi, antarmuka, DHCP, channel, NSD, socket, HTTP, dan akses langsung ke Android WifiManager. Root dan Shizuku memungkinkan penggunaan alat jaringan sistem perangkat.",
                         accent = accent,
                     )
                 }
-                item { SectionTitle("Вмешательство в приложение") }
+                item { SectionTitle("Modifikasi aplikasi") }
                 item {
                     GuideCard(
                         icon = Icons.Default.Code,
-                        title = "Экраны, действия и сервисы",
-                        body = "hook_screen() добавляет слой, FAB или полностью заменяет штатный экран. hook_action() перехватывает именованные операции и может изменить данные, обработать или отменить действие. provide_service() подключает новую реализацию системной возможности с приоритетом и штатным fallback.",
+                        title = "Layar, tindakan, dan layanan",
+                        body = "hook_screen() menambahkan layer, FAB, atau menggantikan layar bawaan sepenuhnya. hook_action() mencegat operasi bernama dan dapat mengubah data, memproses, atau membatalkan tindakan. provide_service() menghubungkan implementasi baru untuk kapabilitas sistem dengan prioritas dan fallback bawaan.",
                         accent = accent,
                     )
                 }
@@ -175,12 +175,12 @@ fun PluginAboutScreen(navController: NavController) {
                 item {
                     GuideCard(
                         icon = Icons.Default.Security,
-                        title = "Режимы экранных хуков",
-                        body = "replace заменяет экран, overlay рисует свободный слой поверх него, top и bottom добавляют Material 3-панель, fab добавляет компактное плавающее действие. Маски маршрутов поддерживают *, например ir_* или other/*.",
+                        title = "Mode hook layar",
+                        body = "replace menggantikan layar, overlay menggambar layer bebas di atasnya, top dan bottom menambahkan panel Material 3, sedangkan fab menambahkan tindakan mengambang yang ringkas. Mask route mendukung *, misalnya ir_* atau other/*.",
                         accent = accent,
                     )
                 }
-                item { SectionTitle("Состояние и настройки") }
+                item { SectionTitle("Status dan pengaturan") }
                 item {
                     CodeBlock(
                         """
@@ -197,8 +197,8 @@ fun PluginAboutScreen(navController: NavController) {
                 item {
                     GuideCard(
                         icon = Icons.Default.Security,
-                        title = "Доверенная модель",
-                        body = "Python-плагин выполняется внутри процесса Dolphy и может получить разрешения приложения, внутренние данные, Root и Shizuku. Устанавливайте только код, который вы прочитали или которому полностью доверяете.",
+                        title = "Model tepercaya",
+                        body = "Plugin Python berjalan di dalam proses Dolphy dan dapat memperoleh izin aplikasi, data internal, Root, dan Shizuku. Instal hanya kode yang sudah Anda baca atau yang sepenuhnya Anda percayai.",
                         accent = accent,
                     )
                 }

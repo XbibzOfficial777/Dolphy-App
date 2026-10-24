@@ -60,7 +60,7 @@ fun BondSpamScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
-                                contentDescription = "Refresh",
+                                contentDescription = "Segarkan",
                                 tint = accentColor
                             )
                         }
@@ -185,7 +185,7 @@ fun BondSpamScreen(
                                                 if (isSelected) {
                                                     Icon(
                                                         imageVector = Icons.Default.CheckCircle,
-                                                        contentDescription = "Selected",
+                                                        contentDescription = "Dipilih",
                                                         tint = accentColor,
                                                         modifier = Modifier.size(20.dp)
                                                     )

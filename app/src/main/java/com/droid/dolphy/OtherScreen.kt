@@ -372,7 +372,7 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
                                                 if (isPinned) {
                                                     Icon(
                                                         imageVector = Icons.Default.PushPin,
-                                                        contentDescription = "Pinned",
+                                                        contentDescription = "Disematkan",
                                                         tint = accent,
                                                         modifier = Modifier.size(16.dp).padding(end = 4.dp)
                                                     )
@@ -847,7 +847,7 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
                                             if (isPinned) {
                                                 Icon(
                                                     imageVector = Icons.Default.PushPin,
-                                                    contentDescription = "Pinned",
+                                                    contentDescription = "Disematkan",
                                                     tint = accent,
                                                     modifier = Modifier.size(16.dp).padding(end = 4.dp)
                                                 )
@@ -1037,7 +1037,7 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
                         )
                     }
                     Text(
-                        text = info.description.ifEmpty { "Описание отсутствует" },
+                        text = info.description.ifEmpty { "Tidak ada deskripsi" },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
@@ -1150,7 +1150,7 @@ private fun RenderTileCard(
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         imageVector = Icons.Default.PushPin,
-                                        contentDescription = "Pinned",
+                                        contentDescription = "Disematkan",
                                         tint = accent,
                                         modifier = Modifier.size(13.dp)
                                     )

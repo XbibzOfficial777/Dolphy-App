@@ -218,7 +218,7 @@ class PluginAndroidApis(
         false
     }
 
-    fun shareText(text: String, title: String = "Share"): Boolean = try {
+    fun shareText(text: String, title: String = "Bagikan"): Boolean = try {
         val send = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, text)

@@ -1,86 +1,57 @@
 # Dolphy
 
-Dolphy is a powerful Android multi-tool developed for wireless protocol research, cybersecurity testing, and hardware emulation. It brings advanced hardware-focused utility functions to stock Android devices completely without root access.
+Dolphy adalah multitool Android yang andal untuk riset protokol nirkabel, pengujian keamanan siber, dan emulasi perangkat keras. Aplikasi ini menghadirkan fungsi utilitas tingkat lanjut yang berfokus pada perangkat keras ke perangkat Android standar, sepenuhnya tanpa akses root.
 
-Dolphy releases telegram channel - https://t.me/Dolphy_app_official
+Kanal Telegram rilis Dolphy — https://t.me/Dolphy_app_official
 
-## The project is protected by a license; please review it!
+## Proyek ini dilindungi lisensi; harap ditinjau!
 
-## Features & Modules
+## Fitur & Modul
 
 ### 🚨 Infrared (IR)
-- Universal Remotes: Comprehensive database integration supporting TVs, ACs, Audio systems, and Projectors (compiled from Flipper-IRDB-main and flipperzero-firmware-dev).
-- IR-Storm: Automated module to send consecutive power-off signals to multiple hardware targets.
-- IR Jammer: Prevents surrounding remote control devices from interacting with nearby hardware.
+- **Remote Universal:** Integrasi database lengkap yang mendukung TV, AC, sistem audio, dan proyektor (disusun dari Flipper-IRDB-main dan flipperzero-firmware-dev).
+- **IR-Storm:** Modul otomatis untuk mengirim sinyal pemadaman secara berurutan ke beberapa target perangkat keras.
+- **IR Jammer:** Mencegah perangkat remote control di sekitar berinteraksi dengan perangkat keras terdekat.
 
 ### 📶 Bluetooth & BLE
-- Audio Device Scanner: Specialized tool to discover, test, and connect to various Bluetooth audio hardware, speakers, and headphones.
-- Advanced NRF Scanner: Professional-grade Bluetooth Low Energy (BLE) device discovery and packet analysis.
-- Dolphy Chat: local chat application operating entirely over BLE protocols with other Dolphy users.
-- HID Keyboard & Mouse: Hardware emulation layer allowing your smartphone to act as a wireless Bluetooth keyboard or mouse.
-- Bluetooth Jammer: Stress-testing module utilizing L2CAP flood attacks to evaluate wireless network resilience.
+- **Pemindai Perangkat Audio:** Alat khusus untuk menemukan, menguji, dan terhubung ke berbagai perangkat keras audio Bluetooth, speaker, dan headphone.
+- **Pemindai NRF Lanjutan:** Penemuan perangkat Bluetooth Low Energy (BLE) dan analisis paket tingkat profesional.
+- **Dolphy Chat:** Aplikasi chat lokal yang beroperasi sepenuhnya melalui protokol BLE dengan pengguna Dolphy lain.
+- **Keyboard & Mouse HID:** Lapisan emulasi perangkat keras yang memungkinkan smartphone berfungsi sebagai keyboard atau mouse Bluetooth nirkabel.
+- **Bluetooth Jammer:** Modul stress testing yang menggunakan L2CAP flood untuk mengevaluasi ketahanan jaringan nirkabel.
 
-### 📡 NFC & QR Tools
-- NFC Instruments: Low-level modules designed for reading, writing, and interacting with diverse NFC tags and cards.
-- QR Tools: Fast QR-code generation and specialized remote audio control mechanisms.
+### 📡 NFC & Alat QR
+- **Instrumen NFC:** Modul tingkat rendah untuk membaca, menulis, dan berinteraksi dengan berbagai tag serta kartu NFC.
+- **Alat QR:** Pembuatan kode QR yang cepat dan mekanisme khusus untuk kontrol audio jarak jauh.
 
-### 🌐 Network & Wi-Fi Testing
-- Wi-Fi Attacks: Built-in network diagnostic environment capable of wireless network scanning, Wi-Fi DoS simulations, and credential Brute-forcing.
-- LAN Scanner: Rapid discovery tool to map all connected hosts and devices within the current local Wi-Fi subnet.
+### 🌐 Pengujian Jaringan & Wi-Fi
+- **Serangan Wi-Fi:** Lingkungan diagnostik jaringan bawaan untuk pemindaian jaringan nirkabel, simulasi Wi-Fi DoS, dan brute force kredensial.
+- **Pemindai LAN:** Alat penemuan cepat untuk memetakan seluruh host dan perangkat yang terhubung dalam subnet Wi-Fi lokal saat ini.
 
-### 📺 Media Protocols
-- SmartTV Cast: Native media streaming and broadcasting support using Chromecast, DIAL, DLNA, and UPnP protocols.
+### 📺 Protokol Media
+- **SmartTV Cast:** Dukungan streaming dan broadcasting media native melalui protokol Chromecast, DIAL, DLNA, dan UPnP.
 
-## Credits & Special Thanks
+## Pengembangan & Arsitektur
 
-Special thanks to the developers and researchers who helped bring this project to life:
-- ZalexDev
-- ars3nb
-- Astrocodee
+Aplikasi dikembangkan dari awal menggunakan stack Java dan Kotlin modern.
 
-================================================================================
+## Build APK Bertanda Tangan melalui GitHub Actions
 
-# Dolphy
+Workflow `.github/workflows/build-apk.yml` menjalankan `:app:assembleRelease` dengan JDK 17 dan Gradle 8.11.1 pada setiap push ke `main` atau melalui **Run workflow**. APK hasil build diunggah sebagai artifact `dolphy-release-apk`.
 
-Dolphy — это мощный Android-мультитул, созданный для исследования беспроводных протоколов, тестирования кибербезопасности и эмуляции работы различного железа. Приложение переносит продвинутый технический функционал на обычные Android-смартфоны полностью без необходимости получения root-прав.
+Signing release memakai empat GitHub Actions Secrets berikut:
 
----
+- `DOLPHY_KEYSTORE_BASE64`
+- `DOLPHY_KEYSTORE_PASSWORD`
+- `DOLPHY_KEY_ALIAS`
+- `DOLPHY_KEY_PASSWORD`
 
-## Функционал и модули
+Keystore yang sama harus disimpan dan digunakan kembali untuk setiap rilis. Jangan membuat keystore baru pada setiap build karena perubahan keystore akan mengubah signature aplikasi dan dapat menghalangi update. Jika keempat secret tidak tersedia, konfigurasi Gradle menggunakan debug signing untuk build lokal.
 
-### 🚨 Инфракрасный порт (IR)
-- Универсальные пульты: Интеграция обширных баз данных для управления телевизорами, кондиционерами, аудиосистемами и проекторами (на основе репозиториев Flipper-IRDB-main и flipperzero-firmware-dev).
-- ИК-Шторм: Автоматизированный модуль для массовой отправки сигналов выключения на окружающие устройства.
-- ИК Глушилка: Блокирует сигналы сторонних пультов, не позволяя им управлять целевой техникой.
+## Kredit & Terima Kasih
 
-### 📶 Bluetooth и BLE
-- Сканер аудиоустройств: Специализированный инструмент для поиска, тестирования и подключения к беспроводным колонкам и наушникам.
-- Продвинутый NRF сканер: Инструмент профессионального уровня для обнаружения BLE-устройств и анализа пакетов данных.
-[26.06.2026 12:40] : - Dolphy Chat: Локальный защищенный чат, работающий напрямую через протоколы BLE между пользователями Dolphy.
-- HID клавиатура и мышь: Эмуляция аппаратных компонентов, позволяющая использовать смартфон как беспроводную клавиатуру или мышь для ПК и других систем.
-- Bluetooth Jammer: Модуль стресс-тестирования беспроводных систем, использующий атаки типа L2CAP flood для проверки устойчивости оборудования.
+Terima kasih kepada para pengembang dan peneliti yang membantu mewujudkan proyek ini:
 
-### 📡 NFC и QR инструменты
-- NFC инструменты: Низкоуровневые модули для чтения, анализа, записи и взаимодействия с различными типами NFC-меток и смарт-карт.
-- QR инструменты: Быстрая генерация QR-кодов и реализация функций удаленного управления аудиосистемами.
-
-### 🌐 Сеть и Wi-Fi
-- Wi-Fi атаки: Встроенная среда для диагностики сетей, включающая сканирование радиоэфира, симуляцию Wi-Fi DoS-атак и проверку паролей на устойчивость к брутфорсу.
-- LAN сканер: Быстрое обнаружение и составление карты всех активных устройств в текущей локальной Wi-Fi сети.
-
-### 📺 Медиа-протоколы
-- SmartTV Cast: Поддержка прямой трансляции и вещания медиапотоков на телевизоры через протоколы Chromecast, DIAL, DLNA и UPnP.
-
----
-
-## Разработка и архитектура
-
-Приложение разработано с нуля с использованием современного стека Java и Kotlin.
----
-
-## Благодарности / Credits
-
-Искренняя благодарность разработчикам и исследователям, внесшим вклад в развитие проекта:
 - ZalexDev
 - ars3nb
 - Astrocodee

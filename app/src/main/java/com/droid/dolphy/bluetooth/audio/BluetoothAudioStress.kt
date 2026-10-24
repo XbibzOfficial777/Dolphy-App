@@ -528,7 +528,7 @@ fun BtAudioStressScanScreen(navController: NavController) {
                     CenterAlignedTopAppBar(
                         title = {
                             Text(
-                                text = "BT-Audio sttest",
+                                text = "Uji stres audio BT",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
@@ -597,7 +597,7 @@ fun BtAudioStressScanScreen(navController: NavController) {
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
-                                    Text("Source: ${device.source}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("Sumber: ${device.source}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Spacer(Modifier.height(8.dp))
                                     com.droid.dolphy.AccentButton(
                                         onClick = {

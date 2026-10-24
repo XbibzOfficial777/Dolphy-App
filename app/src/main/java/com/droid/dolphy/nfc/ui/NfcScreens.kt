@@ -284,12 +284,12 @@ fun NfcWaitScreen(navController: NavController, viewModel: NfcViewModel) {
                                 modifier = Modifier.size(width = 53.dp, height = 53.dp),
                                 frameDelayMs = 333L,
                                 tintColor = accent,
-                                contentDescription = "NFC reading animation",
+                                contentDescription = "Animasi pembacaan NFC",
                             )
                         } else {
                             Image(
                                 painter = painterResource(id = R.drawable.passport_bad2_46x49),
-                                contentDescription = "NFC unavailable",
+                                contentDescription = "NFC tidak tersedia",
                                 modifier = Modifier.size(width = 138.dp, height = 147.dp),
                                 colorFilter = ColorFilter.tint(
                                     color = accent,
@@ -299,7 +299,7 @@ fun NfcWaitScreen(navController: NavController, viewModel: NfcViewModel) {
                         }
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = if(nfcReady) "Приложите метку к телефону" else "NFC недоступен",
+                            text = if(nfcReady) "Dekatkan tag ke ponsel" else "NFC tidak tersedia",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onBackground,
                             fontWeight = FontWeight.SemiBold,
@@ -307,9 +307,9 @@ fun NfcWaitScreen(navController: NavController, viewModel: NfcViewModel) {
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = if(nfcReady) {
-                                if (rootMode) "Ожидание NFC… (root)" else "Ожидание NFC..."
+                                if (rootMode) "Menunggu NFC... (root)" else "Menunggu NFC..."
                             } else {
-                                "Включите NFC в настройках телефона"
+                                "Aktifkan NFC di pengaturan ponsel"
                             },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -400,17 +400,17 @@ fun NfcResultScreen(navController: NavController, viewModel: NfcViewModel, scanI
                     item {
                         SectionCard(title = stringResource(R.string.nfc_section_main)) {
                             KeyValue("UID (hex)", scan!!.uidHex)
-                            KeyValue("Технологии", scan!!.techListCsv)
-                            KeyValue("Writable", scan!!.writable?.let { if(it) "Да" else "Нет" } ?: "—")
-                            KeyValue("Размер памяти", scan!!.maxSizeBytes?.let { "$it bytes" } ?: "—")
+                            KeyValue("Teknologi", scan!!.techListCsv)
+                            KeyValue("Writable", scan!!.writable?.let { if(it) "Ya" else "Tidak" } ?: "—")
+                            KeyValue("Ukuran memori", scan!!.maxSizeBytes?.let { "$it bytes" } ?: "—")
                         }
                     }
 
                     if(!scan!!.ndefRecordType.isNullOrBlank()) {
                         item {
                             SectionCard(title = stringResource(R.string.nfc_section_ndef)) {
-                                KeyValue("Тип записи", scan!!.ndefRecordType ?: "—")
-                                KeyValue("Содержимое", scan!!.ndefContent ?: "—")
+                                KeyValue("Jenis record", scan!!.ndefRecordType ?: "—")
+                                KeyValue("Konten", scan!!.ndefContent ?: "—")
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Row(
                                     modifier = Modifier
@@ -421,7 +421,7 @@ fun NfcResultScreen(navController: NavController, viewModel: NfcViewModel, scanI
                                     horizontalArrangement = Arrangement.Center,
                                 ) {
                                     Text(
-                                        text = if(showHex) "Скрыть HEX" else "Показать HEX",
+                                        text = if(showHex) "Sembunyikan HEX" else "Tampilkan HEX",
                                         color = accent,
                                         fontWeight = FontWeight.SemiBold,
                                     )
@@ -436,18 +436,18 @@ fun NfcResultScreen(navController: NavController, viewModel: NfcViewModel, scanI
                     item {
                         SectionCard(title = stringResource(R.string.nfc_section_analysis)) {
                             KeyValue("NTAG", scan!!.ntagType ?: "—")
-                            KeyValue("Read-only", scan!!.isReadOnly?.let { if(it) "Да" else "Нет" } ?: "—")
+                            KeyValue("Read-only", scan!!.isReadOnly?.let { if(it) "Ya" else "Tidak" } ?: "—")
                             KeyValue(
                                 "Password protection",
                                 when {
                                     scan!!.passwordProtectionSupported != true -> "—"
-                                    scan!!.passwordProtectionEnabled == true -> "Включено"
-                                    scan!!.passwordProtectionEnabled == false -> "Выключено"
-                                    else -> "Неизвестно"
+                                    scan!!.passwordProtectionEnabled == true -> "Aktif"
+                                    scan!!.passwordProtectionEnabled == false -> "Nonaktif"
+                                    else -> "Tidak diketahui"
                                 },
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-                            KeyValue("Вердикт", scan!!.analysisVerdict)
+                            KeyValue("Hasil pemeriksaan", scan!!.analysisVerdict)
                         }
                     }
 
@@ -460,7 +460,7 @@ fun NfcResultScreen(navController: NavController, viewModel: NfcViewModel, scanI
                                     .filter { it.isNotEmpty() }
                                     .toList()
                                 if(lines.isEmpty()) {
-                                    KeyValue("Тип", "EMV карта")
+                                    KeyValue("Jenis", "Kartu EMV")
                                 } else {
                                     lines.forEach { line ->
                                         val idx = line.indexOf(':')
@@ -505,14 +505,14 @@ fun NfcResultScreen(navController: NavController, viewModel: NfcViewModel, scanI
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        emulationName = "Копия ${scan!!.type.ifBlank { "метки" }}"
+                                        emulationName = "Salinan ${scan!!.type.ifBlank { "tag" }}"
                                         showCopyDialog = true
                                     },
                                 accentColor = accent,
                                 cornerRadius = 12.dp,
                             ) {
                                 Text(
-                                    text = "Копировать метку для эмуляции",
+                                    text = "Salin tag untuk emulasi",
                                     style = MaterialTheme.typography.titleMedium,
                                     color = accent,
                                     fontWeight = FontWeight.SemiBold,
@@ -521,7 +521,7 @@ fun NfcResultScreen(navController: NavController, viewModel: NfcViewModel, scanI
                             }
                         } else {
                             Text(
-                                text = "Эту метку эмулировать не получится",
+                                text = "Tag ini tidak dapat diemulasikan",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
@@ -551,7 +551,7 @@ fun NfcResultScreen(navController: NavController, viewModel: NfcViewModel, scanI
             confirmButton = {
                 com.droid.dolphy.AccentButton(
                     onClick = {
-                        val name = emulationName.trim().ifBlank { "Копия метки" }
+                        val name = emulationName.trim().ifBlank { "Salinan tag" }
                         val url = buildEmulationUrl(scan)
                         val tags = NfcTagEmulationStore.loadTags(context)
                         val copy = EmulatedNfcTag(
@@ -604,7 +604,7 @@ private fun NfcTopBar(
         actions = {
             if(onHistory != null) {
                 DolphyIconButton(onClick = onHistory) {
-                    Icon(Icons.Outlined.History, contentDescription = "История")
+                    Icon(Icons.Outlined.History, contentDescription = "Riwayat")
                 }
             }
         },

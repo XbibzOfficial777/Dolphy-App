@@ -314,7 +314,7 @@ fun NfcTagEmulationRunScreen(navController: NavController, tagId: Long) {
                         if (!nfcOn) {
                             Image(
                                 painter = painterResource(id = R.drawable.passport_bad2_46x49),
-                                contentDescription = "NFC unavailable",
+                                contentDescription = "NFC tidak tersedia",
                                 modifier = Modifier
                                     .size(width = 138.dp, height = 147.dp)
                                     .graphicsLayer(scaleX = scale, scaleY = scale),
@@ -326,7 +326,7 @@ fun NfcTagEmulationRunScreen(navController: NavController, tagId: Long) {
                         } else {
                             Image(
                                 painter = painterResource(id = R.drawable.nfc_dolphin_emulation_51x64_transparent),
-                                contentDescription = "NFC emulation",
+                                contentDescription = "Emulasi NFC",
                                 modifier = Modifier
                                     .size(width = 153.dp, height = 192.dp)
                                     .graphicsLayer(scaleX = scale, scaleY = scale),
@@ -451,7 +451,7 @@ private fun EmulationTopBar(
             DolphyIconButton(onClick = onToggleEditMode) {
                 Icon(
                     imageVector = Icons.Filled.Edit,
-                    contentDescription = if (editMode) "Выйти из режима редактирования" else "Редактировать"
+                    contentDescription = if (editMode) "Keluar dari mode edit" else "Edit"
                 )
             }
             if (editMode) {

@@ -146,7 +146,7 @@ internal fun PcConsumerControlsSection(hidConnection: Connection) {
                             value = textToSend,
                             onValueChange = { textToSend = it },
                             modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Text") },
+                            label = { Text("Teks") },
                             singleLine = true,
                         )
                     }
@@ -162,7 +162,7 @@ internal fun PcConsumerControlsSection(hidConnection: Connection) {
                             enabled = textToSend.isNotEmpty(),
                             modifier = Modifier.fillMaxWidth(),
                         ) {
-                            Text("Send text")
+                            Text("Kirim teks")
                         }
                     }
                     item { M3SegmentedListSectionHeader("D-PAD") }
@@ -218,7 +218,7 @@ internal fun PcConsumerControlsSection(hidConnection: Connection) {
                         value = search,
                         onValueChange = { search = it },
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Search") },
+                        label = { Text("Cari") },
                         leadingIcon = { Icon(Icons.Default.Search, null) },
                         singleLine = true,
                     )

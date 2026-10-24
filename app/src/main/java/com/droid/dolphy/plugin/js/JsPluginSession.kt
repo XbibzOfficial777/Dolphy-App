@@ -200,7 +200,7 @@ class JsPluginSession(
         synchronized(this) {
             val sc = scope
             if (!started || sc == null) {
-                return errorNode(lastError ?: "Плагин не загружен")
+                return errorNode(lastError ?: "Plugin tidak dimuat")
             }
             return try {
                 withRhino { cx, _ ->
@@ -220,7 +220,7 @@ class JsPluginSession(
                             if (main is org.mozilla.javascript.Function) {
                                 main.call(cx, sc, sc, arrayOf(ui, api, stateObj))
                             } else {
-                                return@withRhino errorNode("Функция $fnName / screen_main не найдена")
+                                return@withRhino errorNode("Fungsi $fnName / screen_main tidak ditemukan")
                             }
                         }
                     }
@@ -228,7 +228,7 @@ class JsPluginSession(
                     if (node is UiNode.Empty || (node is UiNode.Scaffold && node.content is UiNode.Empty)) {
                         Log.w(TAG, "render produced empty tree for ${manifest.id}/$screenId")
                         if (lastError != null) errorNode(lastError!!)
-                        else errorNode("Пустой UI (проверьте return ui.scaffold({ content: ... }))")
+                        else errorNode("UI kosong (periksa return ui.scaffold({ content: ... }))")
                     } else {
                         lastError = null
                         node

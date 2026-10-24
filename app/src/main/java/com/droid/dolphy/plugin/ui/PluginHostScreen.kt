@@ -399,7 +399,7 @@ fun PluginHostScreen(
                             listOf(
                                 UiNode.Text(emptyTitle, "titleMedium"),
                                 UiNode.Text(
-                                    session.lastError ?: "screen_$screenId returned empty UI",
+                                    session.lastError ?: "screen_$screenId mengembalikan UI kosong",
                                     "bodyMedium",
                                     color = "error",
                                 ),

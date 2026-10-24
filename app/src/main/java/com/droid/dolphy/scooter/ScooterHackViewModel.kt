@@ -120,13 +120,13 @@ class ScooterHackViewModel(app: Application) : AndroidViewModel(app) {
         val a = adapter ?: return
         disconnect(silent = true)
         updateDevice(scooter.address) {
-            it.copy(isConnecting = true, statusMessage = "Connecting…", isConnected = false)
+            it.copy(isConnecting = true, statusMessage = "Menghubungkan…", isConnected = false)
         }
         val remote = try {
             a.getRemoteDevice(scooter.address)
         } catch (_: Exception) {
             updateDevice(scooter.address) {
-                it.copy(isConnecting = false, statusMessage = "Invalid address")
+                it.copy(isConnecting = false, statusMessage = "Alamat yang tidak valid")
             }
             return
         }
@@ -140,7 +140,7 @@ class ScooterHackViewModel(app: Application) : AndroidViewModel(app) {
                         it.copy(
                             isConnecting = false,
                             isConnected = true,
-                            statusMessage = "Connected",
+                            statusMessage = "Terhubung",
                         )
                     }
                 }
@@ -187,7 +187,7 @@ class ScooterHackViewModel(app: Application) : AndroidViewModel(app) {
         _connectedAddress.value = null
         if (addr != null && !silent) {
             updateDevice(addr) {
-                it.copy(isConnected = false, isConnecting = false, statusMessage = "Disconnected")
+                it.copy(isConnected = false, isConnecting = false, statusMessage = "Terputus")
             }
         }
     }

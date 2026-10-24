@@ -64,7 +64,7 @@ object NfcTagAnalyzer {
         } else if(techSimple.contains("IsoDep")) {
             Triple("NFC Type 4 Tag", false, null)
         } else {
-            Triple("Метка", false, null)
+            Triple("Tag", false, null)
         }
 
         val (passwordSupported, passwordEnabled) = if(ntag != null) {
@@ -78,25 +78,25 @@ object NfcTagAnalyzer {
             if(ntag != null) {
                 append("NTAG: ${ntag.name}")
             } else {
-                append("Тип метки: неизвестно")
+                append("Jenis tag: tidak diketahui")
             }
 
-            if(isReadOnly == true) append(" • Read-only")
+            if(isReadOnly == true) append(" вЂў Read-only")
             if(passwordSupported == true) {
                 when(passwordEnabled) {
-                    true -> append(" • Password: включено")
-                    false -> append(" • Password: выключено")
-                    null -> append(" • Password: неизвестно")
+                    true -> append(" вЂў Password: aktif")
+                    false -> append(" вЂў Password: nonaktif")
+                    null -> append(" вЂў Password: tidak diketahui")
                 }
             }
-            if(emvDetected) append(" • EMV")
+            if(emvDetected) append(" вЂў EMV")
         }
 
         NfcScanEntity(
             scannedAtMillis = System.currentTimeMillis(),
-            uidHex = uidHex.ifBlank { "—" },
+            uidHex = uidHex.ifBlank { "вЂ”" },
             type = type,
-            techListCsv = techListCsv.ifBlank { "—" },
+            techListCsv = techListCsv.ifBlank { "вЂ”" },
             writable = writable,
             maxSizeBytes = maxSizeBytes,
             ndefRecordType = ndefRecordType,
@@ -187,16 +187,16 @@ object NfcTagAnalyzer {
                 val paymentSystem = detectPaymentSystem(aids, appLabels)
 
                 return buildString {
-                    appendLine("Тип: EMV Contactless")
-                    appendLine("Стандарт: ISO 14443-4")
-                    appendLine("Поддержка APDU: Да")
-                    appendLine("Платежная система: ${paymentSystem ?: "Не определена"}")
-                    appendLine("Приложений на карте: ${aids.size}")
-                    appendLine("AID: ${if(aids.isNotEmpty()) aids.joinToString(", ") else "—"}")
+                    appendLine("Jenis: EMV Contactless")
+                    appendLine("Standar: ISO 14443-4")
+                    appendLine("Dukungan APDU: Ya")
+                    appendLine("Sistem pembayaran: ${paymentSystem ?: "Tidak ditentukan"}")
+                    appendLine("Aplikasi pada kartu: ${aids.size}")
+                    appendLine("AID: ${if(aids.isNotEmpty()) aids.joinToString(", ") else "вЂ”"}")
                     append("PPSE: 2PAY.SYS.DDF01")
                     if(appLabels.isNotEmpty()) {
                         appendLine()
-                        append("Метка приложения: ${appLabels.joinToString(", ")}")
+                        append("Label aplikasi: ${appLabels.joinToString(", ")}")
                     }
                 }
             }
@@ -215,7 +215,7 @@ object NfcTagAnalyzer {
         if(aidUpper.any { it.startsWith("A000000025") }) return "American Express"
         if(aidUpper.any { it.startsWith("A000000065") }) return "JCB"
         if(aidUpper.any { it.startsWith("A000000333") }) return "UnionPay"
-        if(aidUpper.any { it.startsWith("A000000658") }) return "Мир"
+        if(aidUpper.any { it.startsWith("A000000658") }) return "Mir"
         if(aidUpper.any { it.startsWith("A000000524") }) return "RuPay"
         if(aidUpper.any { it.startsWith("A000000152") }) return "Discover"
 
@@ -226,7 +226,7 @@ object NfcTagAnalyzer {
             "AMEX" in labelText || "AMERICAN EXPRESS" in labelText -> "American Express"
             "JCB" in labelText -> "JCB"
             "UNIONPAY" in labelText -> "UnionPay"
-            "MIR" in labelText || "МИР" in labelText -> "Мир"
+            "MIR" in labelText || "РњРР " in labelText -> "Mir"
             "RUPAY" in labelText -> "RuPay"
             "DISCOVER" in labelText -> "Discover"
             else -> null

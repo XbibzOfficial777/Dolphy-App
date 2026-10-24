@@ -64,14 +64,14 @@ class WifiPrintViewModel(application: Application) : AndroidViewModel(applicatio
     fun addManual(host: String, port: Int, path: String, secure: Boolean) {
         val cleanHost = host.trim().removePrefix("ipp://").removePrefix("ipps://").trimEnd('/')
         if (cleanHost.isBlank() || port !in 1..65535) {
-            _state.value = _state.value.copy(error = "Invalid printer address")
+            _state.value = _state.value.copy(error = "Alamat printer yang tidak valid")
             return
         }
         val cleanPath = path.trim().trim('/').ifBlank { "ipp/print" }
         val scheme = if (secure) "ipps" else "ipp"
         val uri = "$scheme://$cleanHost:$port/$cleanPath"
         if (runCatching { URI.create(uri) }.isFailure) {
-            _state.value = _state.value.copy(error = "Invalid printer address")
+            _state.value = _state.value.copy(error = "Alamat printer yang tidak valid")
             return
         }
         val printer = IppPrinter(name = cleanHost, uri = uri, discovered = false)
@@ -170,7 +170,7 @@ class WifiPrintViewModel(application: Application) : AndroidViewModel(applicatio
                 val job = result.jobId?.let { " #$it" }.orEmpty()
                 _state.value = _state.value.copy(
                     printing = false,
-                    message = "Print job$job accepted by printer",
+                    message = "Job cetak$job diterima printer",
                 )
             }.onFailure { error ->
                 _state.value = _state.value.copy(

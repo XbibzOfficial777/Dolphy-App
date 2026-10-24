@@ -172,7 +172,7 @@ fun QrGeneratorMainScreen(navController: NavController) {
                     onBack = { navController.popBackStack() },
                     actions = {
                         DolphyIconButton(onClick = { showAddDialog = true }) {
-                            Icon(Icons.Default.Add, contentDescription = "Add QR", tint = accentColor)
+                            Icon(Icons.Default.Add, contentDescription = "Tambah QR", tint = accentColor)
                         }
                     }
                 )
@@ -351,7 +351,7 @@ fun QrSavedCard(qr: SavedQrCode, onDelete: () -> Unit, onClick: () -> Unit) {
                 )
             }
             DolphyIconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                Icon(Icons.Default.Delete, contentDescription = "Hapus", tint = MaterialTheme.colorScheme.error)
             }
         }
     }
@@ -399,7 +399,7 @@ fun QrDetailScreen(qrId: String, navController: NavController) {
                             bitmap?.let {
                                 Image(
                                     bitmap = it.asImageBitmap(),
-                                    contentDescription = "QR Code",
+                                    contentDescription = "Kode QR",
                                     modifier = Modifier
                                         .fillMaxSize(0.8f)
                                         .clip(RoundedCornerShape(16.dp))
@@ -425,14 +425,14 @@ fun QrDetailScreen(qrId: String, navController: NavController) {
                         com.droid.dolphy.AccentButton(
                             onClick = {
                                 clipboardManager.setText(AnnotatedString(qr.content))
-                                Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Disalin ke papan klip", Toast.LENGTH_SHORT).show()
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = accentColor),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Icon(Icons.Default.ContentCopy, null, tint = MaterialTheme.colorScheme.onPrimary)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Copy Content", color = MaterialTheme.colorScheme.onPrimary)
+                            Text("Salin konten", color = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                 }
@@ -467,7 +467,7 @@ fun QrAudioSpooferScreen(
         val s = serverIp!!
         if (s.startsWith("http://")) s else "http://$s"
     } else if (isStarted) {
-        "Запуск локального сервера…"
+        "Memulai server lokal…"
     } else {
         "Waiting..."
     }
@@ -485,7 +485,7 @@ fun QrAudioSpooferScreen(
         "wifi" to "Free WiFi",
         "error" to "Error (Chrome style)",
         "vpn" to "VPN Service",
-        "custom_html" to if (customHtmlName != null) "Импорт html ($customHtmlName)" else "Импорт html",
+        "custom_html" to if (customHtmlName != null) "Impor HTML ($customHtmlName)" else "Impor HTML",
     )
     val isCustomHtml = pageType == "custom_html"
 
@@ -557,7 +557,7 @@ fun QrAudioSpooferScreen(
                 when {
                     qrBitmap != null -> Image(
                         bitmap = qrBitmap.asImageBitmap(),
-                        contentDescription = "QR Code",
+                        contentDescription = "Kode QR",
                         modifier = Modifier
                             .fillMaxSize(0.8f)
                             .clip(RoundedCornerShape(16.dp))
@@ -584,13 +584,13 @@ fun QrAudioSpooferScreen(
                     DolphyIconButton(
                         onClick = {
                             clipboardManager.setText(AnnotatedString(qrUrl))
-                            Toast.makeText(context, "URL copied to clipboard", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "URL disalin ke papan klip", Toast.LENGTH_SHORT).show()
                         },
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
                             Icons.Default.ContentCopy,
-                            contentDescription = "Copy URL",
+                            contentDescription = "Salin URL",
                             tint = accentColor.copy(alpha = 0.7f),
                             modifier = Modifier.size(16.dp)
                         )
@@ -600,7 +600,7 @@ fun QrAudioSpooferScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
 
-            Text("SELECT PAGE TYPE", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
+            Text("PILIH JENIS HALAMAN", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(8.dp))
             Box(modifier = Modifier.fillMaxWidth()) {
                 Card(
@@ -613,7 +613,7 @@ fun QrAudioSpooferScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            pages.find { it.first == pageType }?.second ?: "Select Page",
+                            pages.find { it.first == pageType }?.second ?: "Pilih Halaman",
                             modifier = Modifier.weight(1f),
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -649,8 +649,8 @@ fun QrAudioSpooferScreen(
             if (isCustomHtml) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    "Импортированный стиль: только логи. Аудио-управление скрыто. " +
-                        "В логах: заходы на сайт и весь текст, введённый на странице.",
+                    "Gaya impor: hanya log. Kontrol audio disembunyikan.  " +
+                        "Log mencatat kunjungan situs dan seluruh teks yang dimasukkan pada halaman.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     modifier = Modifier.fillMaxWidth()
@@ -660,7 +660,7 @@ fun QrAudioSpooferScreen(
                     onClick = { htmlPickerLauncher.launch("*/*") },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Заменить HTML")
+                    Text("Ganti HTML")
                 }
             }
 
@@ -669,8 +669,8 @@ fun QrAudioSpooferScreen(
             if (!isCustomHtml) {
 
             val deviceCount by viewModel.deviceCount.collectAsState()
-            Text("SOUNDBOARD", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
-            Text("Подключено: $deviceCount устройств", color = accentColor, fontSize = 11.sp, modifier = Modifier.fillMaxWidth())
+            Text("PAPAN SUARA", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
+            Text("Terhubung: $deviceCount perangkat", color = accentColor, fontSize = 11.sp, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SoundButton("", Icons.Default.Message, accentColor) { viewModel.sendCommand("PLAY:iphone_message.mp3") }
@@ -701,7 +701,7 @@ fun QrAudioSpooferScreen(
 
 
             var ttsText by remember { mutableStateOf("") }
-            Text("TEXT TO SPEECH", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
+            Text("TEKS KE UCAPAN", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -712,7 +712,7 @@ fun QrAudioSpooferScreen(
                     value = ttsText,
                     onValueChange = { ttsText = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Enter text to say...", fontSize = 14.sp) },
+                    placeholder = { Text("Masukkan teks untuk diucapkan...", fontSize = 14.sp) },
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
@@ -736,7 +736,7 @@ fun QrAudioSpooferScreen(
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.height(52.dp)
                 ) {
-                    Text("Speak", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                    Text("Ucapkan", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -745,7 +745,7 @@ fun QrAudioSpooferScreen(
 
 
             Text(
-                if (isCustomHtml) "ЛОГИ САЙТА" else "TERMINAL LOGS",
+                if (isCustomHtml) "LOG SITUS" else "TERMINAL LOGS",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,

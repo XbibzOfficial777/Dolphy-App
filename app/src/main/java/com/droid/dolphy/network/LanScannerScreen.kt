@@ -521,7 +521,7 @@ fun LanScannerScreen(navController: NavController) {
                                 )
                             } else {
                                 DolphyIconButton(onClick = { startScan() }) {
-                                    Icon(Icons.Default.Refresh, contentDescription = "Rescan", tint = accent)
+                                    Icon(Icons.Default.Refresh, contentDescription = "Pindai ulang", tint = accent)
                                 }
                             }
                         }
@@ -622,7 +622,7 @@ fun RouterControlPanel(device: LanDevice, accent: Color) {
                                 routerManager.fetchInfo(cfg, device.ip, ::addLog)
                             }
                         } else {
-                            addLog("No configuration for this router. Probing common endpoints...")
+                            addLog("Tidak ada konfigurasi untuk router ini. Menguji endpoint umum...")
                             val genericCfg = RouterConfig(
                                 vendor = vendorName,
                                 detectionKeyword = "",
@@ -653,7 +653,7 @@ fun RouterControlPanel(device: LanDevice, accent: Color) {
                                 routerManager.reboot(cfg, device.ip, ::addLog)
                             }
                         } else {
-                            addLog("Unknown router type. Trying common endpoints...")
+                            addLog("Jenis router tidak dikenal. Mencoba endpoint umum...")
                             val genericCfg = RouterConfig(
                                 vendor = vendorName,
                                 detectionKeyword = "",
@@ -665,7 +665,7 @@ fun RouterControlPanel(device: LanDevice, accent: Color) {
                             )
                             val authed = routerManager.authenticate(genericCfg, device.ip, ::addLog)
                             if (!authed) {
-                                addLog("Could not authenticate. Router may be locked.")
+                                addLog("Tidak dapat mengautentikasi. Router mungkin terkunci.")
                             }
                         }
                     }
@@ -689,7 +689,7 @@ fun RouterControlPanel(device: LanDevice, accent: Color) {
                                 routerManager.checkWifi(cfg, device.ip, ::addLog)
                             }
                         } else {
-                            addLog("No router config for Wi-Fi status")
+                            addLog("Tidak ada konfigurasi router untuk status Wi-Fi")
                         }
                     }
                 }
@@ -702,15 +702,15 @@ fun RouterControlPanel(device: LanDevice, accent: Color) {
                 onClick = {
                     scope.launch {
                         addLog(context.getString(R.string.lan_scanner_log_audit_starting))
-                        addLog("Scanning for open ports...")
+                        addLog("Memindai port terbuka...")
                         withContext(Dispatchers.IO) {
                             val openPorts = checkCommonPorts(device.ip, 200)
                             if (openPorts.isNotEmpty()) {
-                                addLog("Open ports: ${openPorts.joinToString(", ")}")
-                                if (openPorts.contains(23)) addLog("WARN: Telnet (23) is OPEN!")
-                                if (openPorts.contains(8089)) addLog("WARN: TR-069 (8089) is OPEN!")
+                                addLog("Port terbuka: ${openPorts.joinToString(", ")}")
+                                if (openPorts.contains(23)) addLog("PERINGATAN: Telnet (23) TERBUKA!")
+                                if (openPorts.contains(8089)) addLog("PERINGATAN: TR-069 (8089) TERBUKA!")
                             } else {
-                                addLog("No common ports open")
+                                addLog("Tidak ada port umum yang terbuka")
                             }
                         }
                         addLog(context.getString(R.string.lan_scanner_log_audit_creds))
@@ -846,7 +846,7 @@ private fun DeviceCard(device: LanDevice, accent: Color) {
                             shape = RoundedCornerShape(4.dp)
                         ) {
                             Text(
-                                text = "YOU",
+                                text = "Anda",
                                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = accent,
@@ -873,7 +873,7 @@ private fun DeviceCard(device: LanDevice, accent: Color) {
 
                 if (device.openPorts.isNotEmpty()) {
                     Text(
-                        text = "Ports: ${device.openPorts.joinToString(", ")}",
+                        text = "Port: ${device.openPorts.joinToString(", ")}",
                         style = MaterialTheme.typography.labelSmall,
                         color = accent.copy(alpha = 0.6f)
                     )
