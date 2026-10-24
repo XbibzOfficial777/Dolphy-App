@@ -341,6 +341,14 @@
     <string name="ir_user_remotes">Remote Anda</string>
     <string name="ir_user_remotes_title">Remote Anda</string>
     <string name="language_russian">Rusia</string>
+    <string name="language_english">Inggris</string>
+    <string name="language_indonesian">Indonesia</string>
+    <string name="module_search_label">Cari modul</string>
+    <string name="module_search_hint">Nama, deskripsi, atau kategori</string>
+    <string name="module_search_clear">Hapus pencarian</string>
+    <string name="module_search_results">%1$d modul ditemukan</string>
+    <string name="module_search_empty_title">Modul tidak ditemukan</string>
+    <string name="module_search_empty_body">Coba kata kunci lain atau hapus pencarian untuk melihat semua modul.</string>
     <string name="mood_bad">Tidak baik</string>
     <string name="mood_happy">Berbahagia</string>
     <string name="mood_ok">OK</string>

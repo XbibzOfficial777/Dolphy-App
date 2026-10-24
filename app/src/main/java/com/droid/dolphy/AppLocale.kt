@@ -11,10 +11,18 @@ import java.util.Locale
 
 
 object AppLocale {
+    fun normalizeLanguage(language: String?): String {
+        return when (language?.trim()?.lowercase(Locale.ROOT)) {
+            "en" -> "en"
+            "ru" -> "ru"
+            else -> "in"
+        }
+    }
+
     fun wrap(context: Context): Context {
         val prefs = context.getSharedPreferences("DolphyPrefs", Context.MODE_PRIVATE)
-        val language = prefs.getString("app_language", "ru") ?: "ru"
-        val locale = Locale.forLanguageTag(if (language == "en") "en" else "ru")
+        val language = normalizeLanguage(prefs.getString("app_language", "in"))
+        val locale = Locale.forLanguageTag(language)
         Locale.setDefault(locale)
 
         val config = Configuration(context.resources.configuration)

@@ -346,6 +346,14 @@
     <string name="ir_user_remotes">Ваши пульты</string>
     <string name="ir_user_remotes_title">Ваши пульты</string>
     <string name="language_russian">Русский</string>
+    <string name="language_english">Английский</string>
+    <string name="language_indonesian">Индонезийский</string>
+    <string name="module_search_label">Поиск модулей</string>
+    <string name="module_search_hint">Название, описание или категория</string>
+    <string name="module_search_clear">Очистить поиск</string>
+    <string name="module_search_results">Найдено: %1$d</string>
+    <string name="module_search_empty_title">Модули не найдены</string>
+    <string name="module_search_empty_body">Попробуйте другой запрос или очистите поиск, чтобы увидеть все модули.</string>
     <string name="mood_bad">Bad</string>
     <string name="mood_happy">Happy</string>
     <string name="mood_ok">Ok</string>

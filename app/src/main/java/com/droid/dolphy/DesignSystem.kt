@@ -779,23 +779,94 @@ fun AccentButton(
     interactionSource: MutableInteractionSource? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
+    val buttonInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
+    val isPressed by buttonInteractionSource.collectIsPressedAsState()
+    val expressive = LocalExpressiveEnabled.current
+    val pressScale by animateFloatAsState(
+        targetValue = if (isPressed && enabled && expressive) 0.96f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessHigh,
+        ),
+        label = "accent_button_press",
+    )
+
     androidx.compose.material3.Button(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.scale(pressScale),
         enabled = enabled,
         shape = shape,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primaryFixed,
-            contentColor = MaterialTheme.colorScheme.onPrimaryFixed,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-        ),
+        colors = colors,
         elevation = elevation,
         border = border,
         contentPadding = contentPadding,
-        interactionSource = interactionSource,
+        interactionSource = buttonInteractionSource,
         content = content,
     )
+}
+
+
+/** Shared loading, empty, and error presentation with an optional real recovery action. */
+@Composable
+fun DolphyStateCard(
+    title: String,
+    message: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    loading: Boolean = false,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
+) {
+    MaterialCard(
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = 24.dp,
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(28.dp),
+                        strokeWidth = 3.dp,
+                    )
+                } else {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(28.dp),
+                    )
+                }
+            }
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            if (!loading && actionLabel != null && onAction != null) {
+                AccentButton(onClick = onAction) {
+                    Text(actionLabel)
+                }
+            }
+        }
+    }
 }
 
 

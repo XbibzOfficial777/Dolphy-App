@@ -12,13 +12,19 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,12 +37,14 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -80,6 +88,16 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
     val pinnedCards = remember(allDestinations, pinnedRoutes) {
         pinnedRoutes.mapNotNull { route -> allDestinations.find { it.route == route } }
     }
+
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    val visibleSections = remember(currentSections, searchQuery) {
+        filterFunctionDestinationSections(currentSections, searchQuery)
+    }
+    val visiblePinnedCards = remember(pinnedCards, searchQuery) {
+        pinnedCards.filter { moduleMatchesQuery(it.title, it.description, it.section, searchQuery) }
+    }
+    val searchResultCount = visibleSections.sumOf { it.second.size }
+    val showSearchEmpty = searchQuery.isNotBlank() && searchResultCount == 0 && visiblePinnedCards.isEmpty()
 
     fun handleDragMovement(delta: Offset) {
         val dragged = draggingItem ?: return
@@ -219,6 +237,19 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
                         verticalArrangement = Arrangement.spacedBy(M3SegmentedListItemSpacing),
                         contentPadding = PaddingValues(top = 16.dp, bottom = 48.dp),
                     ) {
+                        item(key = "module_search") {
+                            ModuleSearchField(
+                                query = searchQuery,
+                                onQueryChange = { searchQuery = it },
+                                resultCount = searchResultCount,
+                                modifier = Modifier.padding(bottom = 12.dp),
+                            )
+                        }
+                        if (showSearchEmpty) {
+                            item(key = "module_search_empty") {
+                                ModuleSearchEmpty(onClear = { searchQuery = "" })
+                            }
+                        }
                         item(key = "minimal_header") {
                             Box(
                                 modifier = Modifier
@@ -260,8 +291,8 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
                             )
                         }
 
-                        if (pinnedCards.isNotEmpty()) {
-                            val chunkedPinned = pinnedCards.chunked(2)
+                        if (visiblePinnedCards.isNotEmpty()) {
+                            val chunkedPinned = visiblePinnedCards.chunked(2)
                             items(chunkedPinned.size, key = { "pinned_row_$it" }) { rowIndex ->
                                 val pair = chunkedPinned[rowIndex]
                                 Row(
@@ -332,7 +363,7 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
                             }
                         }
 
-                        currentSections.forEach { (section, destinations) ->
+                        visibleSections.forEach { (section, destinations) ->
                             item(key = "sec_header_$section") {
                                 Box(
                                     modifier = Modifier
@@ -486,7 +517,7 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
                     }
                 } else {
                     LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
+                        columns = GridCells.Adaptive(minSize = 140.dp),
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(paddingValues)
@@ -495,6 +526,19 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                         contentPadding = PaddingValues(top = 16.dp, bottom = 48.dp),
                     ) {
+                        item(key = "module_search", span = { GridItemSpan(maxLineSpan) }) {
+                            ModuleSearchField(
+                                query = searchQuery,
+                                onQueryChange = { searchQuery = it },
+                                resultCount = searchResultCount,
+                                modifier = Modifier.padding(bottom = 12.dp),
+                            )
+                        }
+                        if (showSearchEmpty) {
+                            item(key = "module_search_empty", span = { GridItemSpan(maxLineSpan) }) {
+                                ModuleSearchEmpty(onClear = { searchQuery = "" })
+                            }
+                        }
                         item(
                             key = "minimal_header",
                             span = { GridItemSpan(maxLineSpan) }
@@ -542,12 +586,12 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
                             )
                         }
 
-                        if (pinnedCards.isNotEmpty()) {
+                        if (visiblePinnedCards.isNotEmpty()) {
                             items(
-                                count = pinnedCards.size,
-                                key = { "pinned_${pinnedCards[it].route}" }
+                                count = visiblePinnedCards.size,
+                                key = { "pinned_${visiblePinnedCards[it].route}" }
                             ) { idx ->
-                                val item = pinnedCards[idx]
+                                val item = visiblePinnedCards[idx]
                                 val cardKey = "pinned_${item.route}"
 
                                 RenderTileCard(
@@ -577,7 +621,7 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
                             }
                         }
 
-                        currentSections.forEach { (section, destinations) ->
+                        visibleSections.forEach { (section, destinations) ->
                             item(
                                 key = "sec_header_$section",
                                 span = { GridItemSpan(maxLineSpan) }
@@ -683,7 +727,7 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
                 }
             } else if (functionsMenuViewType == 1) {
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
+                    columns = GridCells.Adaptive(minSize = 140.dp),
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
@@ -692,7 +736,20 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(top = 24.dp, bottom = 120.dp),
                 ) {
-                    currentSections.forEach { (section, destinations) ->
+                    item(key = "module_search", span = { GridItemSpan(maxLineSpan) }) {
+                        ModuleSearchField(
+                            query = searchQuery,
+                            onQueryChange = { searchQuery = it },
+                            resultCount = searchResultCount,
+                            modifier = Modifier.padding(bottom = 12.dp),
+                        )
+                    }
+                    if (showSearchEmpty) {
+                        item(key = "module_search_empty", span = { GridItemSpan(maxLineSpan) }) {
+                            ModuleSearchEmpty(onClear = { searchQuery = "" })
+                        }
+                    }
+                    visibleSections.forEach { (section, destinations) ->
                         item(
                             key = "header_$section",
                             span = { GridItemSpan(maxLineSpan) }
@@ -803,7 +860,20 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
                     verticalArrangement = Arrangement.spacedBy(M3SegmentedListItemSpacing),
                     contentPadding = PaddingValues(top = 24.dp, bottom = 120.dp),
                 ) {
-                    currentSections.forEach { (section, destinations) ->
+                    item(key = "module_search") {
+                        ModuleSearchField(
+                            query = searchQuery,
+                            onQueryChange = { searchQuery = it },
+                            resultCount = searchResultCount,
+                            modifier = Modifier.padding(bottom = 12.dp),
+                        )
+                    }
+                    if (showSearchEmpty) {
+                        item(key = "module_search_empty") {
+                            ModuleSearchEmpty(onClear = { searchQuery = "" })
+                        }
+                    }
+                    visibleSections.forEach { (section, destinations) ->
                         item(key = "header_$section") {
                             Box(
                                 modifier = Modifier
@@ -1054,6 +1124,67 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
 }
 
 @Composable
+private fun ModuleSearchField(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    resultCount: Int,
+    modifier: Modifier = Modifier,
+) {
+    val focusManager = LocalFocusManager.current
+    Column(modifier = modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = { onQueryChange(it.take(80)) },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(R.string.module_search_label)) },
+            placeholder = { Text(stringResource(R.string.module_search_hint)) },
+            leadingIcon = {
+                Icon(imageVector = Icons.Default.Search, contentDescription = null)
+            },
+            trailingIcon = {
+                if (query.isNotEmpty()) {
+                    IconButton(
+                        onClick = {
+                            onQueryChange("")
+                            focusManager.clearFocus()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = stringResource(R.string.module_search_clear),
+                        )
+                    }
+                }
+            },
+            singleLine = true,
+            shape = RoundedCornerShape(24.dp),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+        )
+        if (query.isNotBlank()) {
+            Text(
+                text = stringResource(R.string.module_search_results, resultCount),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ModuleSearchEmpty(onClear: () -> Unit) {
+    DolphyStateCard(
+        title = stringResource(R.string.module_search_empty_title),
+        message = stringResource(R.string.module_search_empty_body),
+        icon = Icons.Default.SearchOff,
+        actionLabel = stringResource(R.string.module_search_clear),
+        onAction = onClear,
+        modifier = Modifier.padding(vertical = 8.dp),
+    )
+}
+
+@Composable
 private fun RenderTileCard(
     item: FunctionDestination,
     tileSize: Float,
@@ -1073,7 +1204,7 @@ private fun RenderTileCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(tileSize.dp)
+            .heightIn(min = tileSize.dp)
             .zIndex(if (isBeingDragged) 100f else 0f)
             .graphicsLayer {
                 if (isBeingDragged) {
@@ -1173,8 +1304,8 @@ private fun RenderTileCard(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = Color.White,
-                        maxLines = 1,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
 
@@ -1193,8 +1324,8 @@ private fun RenderTileCard(
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Normal
                             ),
-                            color = Color.White.copy(alpha = 0.62f),
-                            maxLines = 1,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                     }

@@ -633,6 +633,14 @@
     <string name="advertise_empty_presets">You have not added any devices yet.</string>
     <string name="ble_company_code_line">Company code: 0x%1$04X • %2$s</string>
     <string name="language_russian">Russian</string>
+    <string name="language_english">English</string>
+    <string name="language_indonesian">Indonesian</string>
+    <string name="module_search_label">Search modules</string>
+    <string name="module_search_hint">Name, description, or category</string>
+    <string name="module_search_clear">Clear search</string>
+    <string name="module_search_results">%1$d modules found</string>
+    <string name="module_search_empty_title">No modules found</string>
+    <string name="module_search_empty_body">Try another keyword or clear the search to see every module.</string>
     <string name="theme_selection_title">Theme</string>
     <string name="theme_mode_auto_desc">Match system</string>
     <string name="theme_mode_dark_desc">Dark theme</string>

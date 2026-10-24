@@ -1,26 +1,21 @@
-name: Build APK
+name: Test, Build & Release APK
 
 on:
   push:
     branches: [main]
-    paths:
-      - "app/**"
-      - "gradle/**"
-      - "*.gradle.kts"
-      - "gradle.properties"
-      - ".github/workflows/build-apk.yml"
+    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: build-apk-${{ github.ref }}
+  group: dolphy-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-release:
-    name: Build signed release APK
+  verify-build-release:
+    name: Test, lint, build and verify signed APK
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -34,12 +29,43 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Set up Gradle 8.11.1
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.11.1"
 
-      - name: Decode release keystore
+      - name: Run JVM unit tests
+        run: gradle :app:testDebugUnitTest --no-daemon --stacktrace
+
+      - name: Upload unit test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dolphy-unit-test-reports
+          path: |
+            app/build/reports/tests/testDebugUnitTest/
+            app/build/test-results/testDebugUnitTest/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Run Android lint
+        run: gradle :app:lintDebug --no-daemon --stacktrace
+
+      - name: Upload Android lint reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dolphy-lint-reports
+          path: |
+            app/build/reports/lint-results-debug.*
+            app/build/reports/lint-results-debug/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Decode reusable release keystore
         env:
           DOLPHY_KEYSTORE_BASE64: ${{ secrets.DOLPHY_KEYSTORE_BASE64 }}
         run: |
@@ -48,7 +74,7 @@ jobs:
           printf '%s' "$DOLPHY_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/dolphy-release.jks"
           chmod 600 "$RUNNER_TEMP/dolphy-release.jks"
 
-      - name: Build release APK
+      - name: Build signed release APK
         env:
           DOLPHY_KEYSTORE_FILE: ${{ runner.temp }}/dolphy-release.jks
           DOLPHY_KEYSTORE_PASSWORD: ${{ secrets.DOLPHY_KEYSTORE_PASSWORD }}
@@ -56,10 +82,64 @@ jobs:
           DOLPHY_KEY_PASSWORD: ${{ secrets.DOLPHY_KEY_PASSWORD }}
         run: gradle :app:assembleRelease --no-daemon --stacktrace
 
-      - name: Upload signed APK
+      - name: Verify and package release APK
+        id: package
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          ZIPALIGN="$(find "$ANDROID_HOME/build-tools" -type f -name zipalign | sort -V | tail -n 1)"
+          test -x "$APKSIGNER"
+          test -x "$ZIPALIGN"
+          "$APKSIGNER" verify --verbose --print-certs "$APK"
+          "$ZIPALIGN" -c -P 4 4 "$APK"
+          VERSION_NAME="$(sed -n 's/^[[:space:]]*versionName = "\([^"]*\)"/\1/p' app/build.gradle.kts | head -n 1)"
+          test -n "$VERSION_NAME"
+          RELEASE_APK="$RUNNER_TEMP/Dolphy-${VERSION_NAME}-indonesia.apk"
+          cp "$APK" "$RELEASE_APK"
+          sha256sum "$RELEASE_APK"
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "apk_path=$RELEASE_APK" >> "$GITHUB_OUTPUT"
+
+      - name: Upload verified signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: dolphy-release-apk
-          path: app/build/outputs/apk/release/*.apk
+          name: dolphy-${{ steps.package.outputs.version_name }}-signed-apk
+          path: ${{ steps.package.outputs.apk_path }}
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish tagged GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APK_PATH: ${{ steps.package.outputs.apk_path }}
+          VERSION_NAME: ${{ steps.package.outputs.version_name }}
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/release-notes.md" <<EOF
+          ## Dolphy ${VERSION_NAME}
+
+          - Antarmuka Dolphy Expressive dengan grid modul adaptif dan kartu yang ramah tema serta ukuran font.
+          - Pencarian modul nyata berdasarkan judul, deskripsi, dan kategori.
+          - Bahasa Indonesia menjadi default; pilihan Indonesia, English, dan Русский tersedia.
+          - Animasi tekan tombol mengikuti pengaturan expressive dan mode performa.
+
+          ## Verifikasi CI
+
+          - Unit test JVM dijalankan pada GitHub Actions.
+          - Release APK dibuat di GitHub Actions dan ditandatangani dengan kunci rilis tetap dari Secrets.
+          - Signature APK dan ZIP alignment diverifikasi pada runner.
+
+          Perilaku perangkat keras fisik BLE, NFC, IR, dan kamera tetap memerlukan validasi pada perangkat nyata; runner GitHub tidak menguji perangkat keras tersebut.
+          EOF
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$APK_PATH" --clobber
+            gh release edit "$GITHUB_REF_NAME" --title "Dolphy $VERSION_NAME" --notes-file "$RUNNER_TEMP/release-notes.md"
+          else
+            gh release create "$GITHUB_REF_NAME" "$APK_PATH" \
+              --verify-tag \
+              --title "Dolphy $VERSION_NAME" \
+              --notes-file "$RUNNER_TEMP/release-notes.md"
+          fi

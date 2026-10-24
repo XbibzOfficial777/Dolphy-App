@@ -250,7 +250,7 @@ fun DolphyTheme(
     }
 
     androidx.compose.runtime.CompositionLocalProvider(
-        LocalExpressiveEnabled provides true,
+        LocalExpressiveEnabled provides expressiveEnabled,
         LocalAnimatedBackgroundEnabled provides animatedBackgroundEnabled,
         LocalDensity provides scaledDensity,
     ) {
@@ -3043,8 +3043,9 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                             }
                             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                                 listOf(
+                                    stringResource(R.string.language_indonesian) to "in",
+                                    stringResource(R.string.language_english) to "en",
                                     stringResource(R.string.language_russian) to "ru",
-                                    "English" to "en",
                                 ).forEachIndexed { index, (label, language) ->
                                     SegmentedButton(
                                         selected = appLanguage == language,
@@ -3052,7 +3053,7 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                                             spamViewModel.setAppLanguage(language)
                                             applyInAppLocale(context)
                                         },
-                                        shape = SegmentedButtonDefaults.itemShape(index, 2),
+                                        shape = SegmentedButtonDefaults.itemShape(index, 3),
                                         label = { Text(label) },
                                     )
                                 }
@@ -5819,7 +5820,7 @@ class SpamViewModel(private val application: Application) : AndroidViewModel(app
     val animatedBackgroundEnabled: StateFlow<Boolean> = _animatedBackgroundEnabled
     private val _expressiveEnabled = MutableStateFlow(prefs.getBoolean("md3_expressive", false))
     val expressiveEnabled: StateFlow<Boolean> = _expressiveEnabled
-    private val _appLanguage = MutableStateFlow(prefs.getString("app_language", "ru") ?: "ru")
+    private val _appLanguage = MutableStateFlow(AppLocale.normalizeLanguage(prefs.getString("app_language", "in")))
     val appLanguage: StateFlow<String> = _appLanguage
     private val _cyclicDolphinAnimationEnabled = MutableStateFlow(prefs.getBoolean("cyclic_dolphin_animation_enabled", false))
     val cyclicDolphinAnimationEnabled: StateFlow<Boolean> = _cyclicDolphinAnimationEnabled
@@ -6041,7 +6042,7 @@ class SpamViewModel(private val application: Application) : AndroidViewModel(app
     }
 
     fun setAppLanguage(language: String) {
-        val normalized = if (language == "en") "en" else "ru"
+        val normalized = AppLocale.normalizeLanguage(language)
         prefs.edit { putString("app_language", normalized) }
         _appLanguage.value = normalized
     }
