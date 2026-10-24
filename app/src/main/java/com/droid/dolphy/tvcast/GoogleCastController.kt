@@ -94,7 +94,7 @@ class GoogleCastController(
             postState(CastStatus.IDLE, device = null)
         }
 
-        override fun onSessionResuming(session: CastSession) {
+        override fun onSessionResuming(session: CastSession, sessionId: String) {
             postState(CastStatus.CONNECTING)
         }
 
