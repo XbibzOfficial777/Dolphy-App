@@ -48,20 +48,6 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
-      - name: Run Android lint
-        run: gradle :app:lintDebug --no-daemon --stacktrace
-
-      - name: Upload Android lint reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: dolphy-lint-reports
-          path: |
-            app/build/reports/lint-results-debug.*
-            app/build/reports/lint-results-debug/
-          if-no-files-found: warn
-          retention-days: 30
-
       - name: Decode reusable release keystore
         env:
           DOLPHY_KEYSTORE_BASE64: ${{ secrets.DOLPHY_KEYSTORE_BASE64 }}

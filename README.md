@@ -37,11 +37,11 @@ Aplikasi dikembangkan dari awal menggunakan stack Java dan Kotlin modern.
 
 ## Build APK Bertanda Tangan melalui GitHub Actions
 
-Workflow `.github/workflows/build-apk.yml` menggunakan JDK 17, Android SDK, dan Gradle 8.11.1 pada setiap push ke `main`, push tag `v*`, atau melalui **Run workflow**. Tahapannya menjalankan `:app:testDebugUnitTest`, `:app:lintDebug`, lalu `:app:assembleRelease`. APK release kemudian diperiksa dengan `apksigner` dan `zipalign` sebelum diunggah.
+Workflow `.github/workflows/build-apk.yml` menggunakan JDK 17, Android SDK, dan Gradle 8.11.1 pada setiap push ke `main`, push tag `v*`, atau melalui **Run workflow**. Tahapannya menjalankan `:app:testDebugUnitTest` lalu `:app:assembleRelease`. APK release kemudian diperiksa dengan `apksigner` dan `zipalign` sebelum diunggah.
 
-Artifact yang disimpan meliputi laporan unit test, laporan lint, dan APK `Dolphy-<versi>-indonesia.apk`. Untuk menerbitkan APK ke **GitHub Releases**, push tag versi seperti `v2.7`. Tag menjalankan kembali test dan build; tahap publikasi hanya berjalan setelah seluruh tahap sebelumnya berhasil. Jika tag yang sama dijalankan ulang, asset pada release tersebut diperbarui.
+Artifact yang disimpan meliputi laporan unit test dan APK `Dolphy-<versi>-indonesia.apk`. Untuk menerbitkan APK ke **GitHub Releases**, push tag versi seperti `v2.7`. Tag menjalankan kembali test dan build; tahap publikasi hanya berjalan setelah seluruh tahap sebelumnya berhasil. Jika tag yang sama dijalankan ulang, asset pada release tersebut diperbarui.
 
-Test JVM, lint, kompilasi, dan verifikasi signature berjalan pada runner GitHub. Fungsi perangkat keras fisik seperti BLE, NFC, IR, dan kamera tetap harus divalidasi pada perangkat nyata; CI tidak mensimulasikan atau mengklaim pengujian perangkat keras tersebut.
+Test JVM, kompilasi, dan verifikasi signature berjalan pada runner GitHub. Fungsi perangkat keras fisik seperti BLE, NFC, IR, dan kamera tetap harus divalidasi pada perangkat nyata; CI tidak mensimulasikan atau mengklaim pengujian perangkat keras tersebut.
 
 Signing release memakai empat GitHub Actions Secrets berikut:
 
