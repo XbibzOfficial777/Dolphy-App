@@ -38,6 +38,16 @@ class IrRemoteIndexTest {
     }
 
     @Test
+    fun convertedCsvRemoteRetainsNestedBrandPath() {
+        val location = flipperAssetLocation(
+            "Flipper-IRDB-main/_Converted_/CSV/A/Aiwa/Receiver/12_0.ir"
+        )
+        assertEquals("_Converted_", location?.category)
+        assertEquals("CSV/A/Aiwa/Receiver", location?.brand)
+        assertEquals("12_0", location?.model)
+    }
+
+    @Test
     fun indexRetrievesNestedRemoteByCategoryBrandAndModel() {
         val path = "Flipper-IRDB-main/Car_Multimedia/DVD_Players/Lexus/Lexus_GX470_DVD_2008.ir"
         val index = buildFlipperIndex(listOf(path))

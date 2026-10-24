@@ -82,6 +82,10 @@ android {
 
     androidResources {
         noCompress += "png"
+        // AAPT's default "_*" rule silently drops Flipper's _Converted_ directory.
+        // Replace (not append to) the defaults while retaining normal metadata exclusions.
+        ignoreAssetsPatterns.clear()
+        ignoreAssetsPatterns.add("!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~")
     }
     lint {
         checkReleaseBuilds = false

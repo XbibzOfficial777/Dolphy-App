@@ -1002,7 +1002,7 @@ internal fun localizeFlipperCategory(res: Resources, cat: String): String {
         "whiteboards" -> R.string.ir_cat_whiteboards
         "window_cleaners" -> R.string.ir_cat_window_cleaners
         "banners" -> R.string.ir_cat_banners
-        "ик глушилка" -> R.string.ir_cat_jammer
+        "ir_jammer" -> R.string.ir_cat_jammer
         else -> null
     }
     return if (id != null) res.getString(id) else cat
@@ -1042,7 +1042,7 @@ private fun categoryIcon(catId: String): ImageVector {
         "toys" -> Icons.Default.Toys
         "videoconferencing" -> Icons.Default.Videocam
         "whiteboards" -> Icons.Default.Draw
-        "ик глушилка" -> Icons.Default.Block
+        "ir_jammer" -> Icons.Default.Block
         else -> Icons.Default.DevicesOther
     }
 }
@@ -1260,7 +1260,7 @@ fun IRFlipperHome(navController: NavController) {
                 Triple(
                     categoryIcon(catId),
                     localizeFlipperCategory(res, catId),
-                    if (catId.equals("ик глушилка", ignoreCase = true)) {
+                    if (catId.equals("ir_jammer", ignoreCase = true)) {
                         "other/ir_jammer"
                     } else {
                         "other/flipper_cat/${Uri.encode(catId)}"
@@ -4003,7 +4003,7 @@ fun IRJammerScreen(navController: NavController? = null) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val accentColor = MaterialTheme.colorScheme.primary
-    val jammerAssetPath = "Flipper-IRDB-main/ИК глушилка/IRjammer.ir"
+    val jammerAssetPath = "Flipper-IRDB-main/IR_Jammer/IRjammer.ir"
 
     var buttons by remember { mutableStateOf<List<IrButton>?>(null) }
     var sourceLabel by remember { mutableStateOf("IRjammer.ir") }

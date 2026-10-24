@@ -65,6 +65,36 @@ jobs:
           DOLPHY_KEY_PASSWORD: ${{ secrets.DOLPHY_KEY_PASSWORD }}
         run: gradle :app:assembleRelease --no-daemon --stacktrace
 
+      - name: Verify packaged IR database
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          asset_root = Path("app/src/main/assets")
+          expected = {
+              p.relative_to(asset_root).as_posix()
+              for base in ("Flipper-IRDB-main", "tv_best_remotes")
+              for p in (asset_root / base).rglob("*.ir")
+          }
+          with ZipFile("app/build/outputs/apk/release/app-release.apk") as apk:
+              actual = {
+                  name.removeprefix("assets/")
+                  for name in apk.namelist()
+                  if name.startswith("assets/")
+                  and name.removeprefix("assets/").split("/", 1)[0] in {"Flipper-IRDB-main", "tv_best_remotes"}
+                  and name.endswith(".ir")
+              }
+          missing = sorted(expected - actual)
+          unexpected = sorted(actual - expected)
+          if missing or unexpected:
+              print("Missing IR assets:", missing[:30])
+              print("Unexpected IR assets:", unexpected[:30])
+              raise SystemExit(f"IR package mismatch: {len(missing)} missing, {len(unexpected)} unexpected")
+          print(f"Verified {len(actual)} IR files inside the release APK")
+          PY
+
       - name: Verify and package release APK
         id: package
         run: |
@@ -114,6 +144,7 @@ jobs:
 
           - Unit test JVM dijalankan pada GitHub Actions.
           - Release APK dibuat di GitHub Actions dan ditandatangani dengan kunci rilis tetap dari Secrets.
+          - Seluruh path database IR di dalam APK dibandingkan dengan aset sumber.
           - Signature APK dan ZIP alignment diverifikasi pada runner.
 
           Perilaku fisik Chromecast, DLNA, BLE, NFC, IR, kamera, dan hardware lain tetap memerlukan validasi pada perangkat nyata; runner GitHub tidak menguji perangkat tersebut.
