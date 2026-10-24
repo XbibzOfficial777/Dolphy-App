@@ -23,8 +23,8 @@ android {
         applicationId = "com.droid.dolphy"
         minSdk = 26
         targetSdk = 36
-        versionCode = 27
-        versionName = "2.7"
+        versionCode = 28
+        versionName = "2.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -158,6 +158,7 @@ dependencies {
 
     implementation("org.mozilla:rhino:1.7.15")
     implementation("org.nanohttpd:nanohttpd:2.3.1")
+    implementation("com.google.android.gms:play-services-cast-framework:23.0.0")
     implementation("com.hp.jipp:jipp-core:0.7.18")
     implementation("com.hp.jipp:jipp-pdl:0.7.18")
     implementation("androidx.media3:media3-exoplayer:1.3.1")

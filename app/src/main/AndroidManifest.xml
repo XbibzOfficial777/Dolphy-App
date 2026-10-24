@@ -79,6 +79,9 @@
         android:extractNativeLibs="true"
         android:theme="@style/Theme.Dolphy"
         tools:replace="android:extractNativeLibs">
+        <meta-data
+            android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
+            android:value="com.droid.dolphy.tvcast.DolphyCastOptionsProvider" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

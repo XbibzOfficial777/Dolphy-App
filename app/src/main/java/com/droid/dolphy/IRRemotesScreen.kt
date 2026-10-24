@@ -882,7 +882,7 @@ object IrRepository {
     fun getFlipperIndex(context: Context): Map<String, Map<String, String>> {
         flIndexCache?.let { return it }
 
-        val cacheFile = java.io.File(context.filesDir, "ir_flipper_index_v1.txt")
+        val cacheFile = java.io.File(context.filesDir, "ir_flipper_index_v2.txt")
         if (cacheFile.isFile && cacheFile.length() > 64) {
             try {
                 val result = mutableMapOf<String, MutableMap<String, String>>()
@@ -906,19 +906,21 @@ object IrRepository {
             }
         }
         val base = "Flipper-IRDB-main"
-        val cats = listAssets(context, base)
-        val result = mutableMapOf<String, MutableMap<String, String>>()
-        for (cat in cats) {
-            val brands = listAssets(context, "$base/$cat")
-            for (brand in brands) {
-                val models = listAssets(context, "$base/$cat/$brand")
-                val modelMap = mutableMapOf<String, String>()
-                for (model in models.filter { it.endsWith(".ir") }) {
-                    modelMap[model.removeSuffix(".ir")] = "$base/$cat/$brand/$model"
+        fun collectIrAssets(path: String): List<String> {
+            val files = mutableListOf<String>()
+            for (name in listAssets(context, path)) {
+                if (name.startsWith('.')) continue
+                val childPath = "$path/$name"
+                if (name.endsWith(".ir", ignoreCase = true)) {
+                    files += childPath
+                } else {
+                    files += collectIrAssets(childPath)
                 }
-                if (modelMap.isNotEmpty()) result["$cat/$brand"] = modelMap
             }
+            return files
         }
+
+        val result = buildFlipperIndex(collectIrAssets(base))
         flIndexCache = result
         try {
             cacheFile.bufferedWriter().use { w ->
@@ -1185,27 +1187,48 @@ fun IRFlipperHome(navController: NavController) {
     var categories by remember { mutableStateOf<List<String>?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<FlipperSearchResult>>(emptyList()) }
+    var isSearching by remember { mutableStateOf(false) }
+    var hasSearchError by remember { mutableStateOf(false) }
+    var searchRevision by remember { mutableStateOf(0) }
+    var remoteCount by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
-            categories = IrRepository.getFlipperIndex(context).keys
+            val flipperIndex = IrRepository.getFlipperIndex(context)
+            categories = flipperIndex.keys
                 .map { it.substringBefore('/') }
                 .distinct()
                 .sorted()
+            remoteCount = flipperIndex.values.sumOf { it.size } +
+                IrRepository.getTvIndex(context).values.sumOf { it.size }
         }
     }
 
-    LaunchedEffect(searchQuery) {
+    LaunchedEffect(searchQuery, searchRevision) {
         val query = searchQuery
         if (query.isBlank()) {
             searchResults = emptyList()
+            isSearching = false
+            hasSearchError = false
             return@LaunchedEffect
         }
-        delay(250)
-        val results = withContext(Dispatchers.IO) {
-            findFlipperRemotes(context, query, limit = 40)
+        isSearching = true
+        hasSearchError = false
+        searchResults = emptyList()
+        try {
+            delay(250)
+            searchResults = withContext(Dispatchers.IO) {
+                findIrRemotes(context, query, limit = 60)
+            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("IrRemoteSearch", "Search failed", e)
+            searchResults = emptyList()
+            hasSearchError = true
+        } finally {
+            isSearching = false
         }
-        searchResults = results
     }
 
     if (categories == null) {
@@ -1262,12 +1285,22 @@ fun IRFlipperHome(navController: NavController) {
             item {
                 TextField(
                     value = searchQuery,
-                    onValueChange = { searchQuery = it },
+                    onValueChange = { searchQuery = it.take(100) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 8.dp),
                     placeholder = { Text(smartSearch) },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = searchCd) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = stringResource(R.string.module_search_clear),
+                                )
+                            }
+                        }
+                    },
                     singleLine = true,
                     shape = RoundedCornerShape(28.dp),
                     colors = androidx.compose.material3.TextFieldDefaults.colors(
@@ -1280,19 +1313,50 @@ fun IRFlipperHome(navController: NavController) {
                     )
                 )
             }
-            m3SegmentedItems(quickLinks) { index, count, link ->
-                M3SegmentedListItem(
-                    index = index,
-                    count = count,
-                    headline = link.second,
-                    leadingIcon = link.first,
-                    leadingIconTint = accent,
-                    onClick = { navController.navigate(link.third) },
-                )
+            if (remoteCount > 0) {
+                item {
+                    Text(
+                        text = stringResource(R.string.ir_database_count, remoteCount),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 12.dp, bottom = 8.dp),
+                    )
+                }
+            }
+            if (searchQuery.isBlank()) {
+                m3SegmentedItems(quickLinks) { index, count, link ->
+                    M3SegmentedListItem(
+                        index = index,
+                        count = count,
+                        headline = link.second,
+                        leadingIcon = link.first,
+                        leadingIconTint = accent,
+                        onClick = { navController.navigate(link.third) },
+                    )
+                }
             }
 
             if (searchQuery.isNotBlank()) {
-                if (searchResults.isNotEmpty()) {
+                if (isSearching) {
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(24.dp),
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            ContainedLoadingIndicator()
+                        }
+                    }
+                } else if (hasSearchError) {
+                    item {
+                        DolphyStateCard(
+                            title = stringResource(R.string.error),
+                            message = stringResource(R.string.ir_search_failed),
+                            icon = Icons.Default.ErrorOutline,
+                            actionLabel = stringResource(R.string.retry),
+                            onAction = { searchRevision++ },
+                        )
+                    }
+                } else if (searchResults.isNotEmpty()) {
                     item {
                         Spacer(Modifier.height(12.dp))
                         SectionLabel(resultsLabel)
@@ -1302,11 +1366,19 @@ fun IRFlipperHome(navController: NavController) {
                             index = index,
                             count = count,
                             headline = item.model,
-                            supporting = "${localizeFlipperCategory(res, item.category)} • ${item.brand}",
+                            supporting = if (item.source == IrSearchSource.TV) {
+                                "TV • ${item.brand}"
+                            } else {
+                                "${localizeFlipperCategory(res, item.category)} • ${item.brand}"
+                            },
                             onClick = {
-                                navController.navigate(
-                                    "flipper_remote/${Uri.encode(item.category)}/${Uri.encode(item.brand)}/${Uri.encode(item.model)}"
-                                )
+                                val route = when (item.source) {
+                                    IrSearchSource.TV ->
+                                        "other/tv_remote/${Uri.encode(item.brand)}/${Uri.encode(item.model)}"
+                                    IrSearchSource.FLIPPER ->
+                                        "other/flipper_remote/${Uri.encode(item.category)}/${Uri.encode(item.brand)}/${Uri.encode(item.model)}"
+                                }
+                                navController.navigate(route)
                             },
                         )
                     }
@@ -1340,11 +1412,14 @@ fun IRFlipperHome(navController: NavController) {
     }
 }
 
+private enum class IrSearchSource { FLIPPER, TV }
+
 private data class FlipperSearchResult(
     val category: String,
     val brand: String,
     val model: String,
-    val score: Int
+    val score: Int,
+    val source: IrSearchSource = IrSearchSource.FLIPPER,
 )
 
 private fun normalizeSearch(text: String): String {
@@ -1505,10 +1580,6 @@ private fun findFlipperRemotes(context: Context, query: String, limit: Int): Lis
     for ((catBrand, models) in flIndex) {
         val category = catBrand.substringBefore('/')
         val brand = catBrand.substringAfter('/')
-        val brandScoreBase = scoreMatch(tokens, category, brand, brand)
-        if (brandScoreBase <= 0 && tokens.any { it.length >= 4 }) {
-            continue
-        }
         for (model in models.keys) {
             val score = scoreMatch(tokens, category, brand, model)
             if (score > 0) {
@@ -1518,6 +1589,43 @@ private fun findFlipperRemotes(context: Context, query: String, limit: Int): Lis
     }
     return results
         .sortedWith(compareByDescending<FlipperSearchResult> { it.score }.thenBy { it.model })
+        .take(limit)
+}
+
+private fun findTvRemotes(context: Context, query: String): List<FlipperSearchResult> {
+    val base = normalizeSearch(query)
+    val tokensRaw = base.split(" ").filter { it.isNotBlank() }.toMutableSet()
+    tokensRaw += normalizeSearch(translitRuToEn(base)).split(" ").filter { it.isNotBlank() }
+    tokensRaw += normalizeSearch(translitEnToRu(base)).split(" ").filter { it.isNotBlank() }
+    if (tokensRaw.isEmpty()) return emptyList()
+    val tokens = expandQueryAliases(tokensRaw)
+
+    val results = mutableListOf<FlipperSearchResult>()
+    for ((brand, models) in IrRepository.getTvIndex(context)) {
+        for (model in models.keys) {
+            val score = scoreMatch(tokens, "TV", brand, model)
+            if (score > 0) {
+                results += FlipperSearchResult(
+                    category = "TV",
+                    brand = brand,
+                    model = model,
+                    score = score,
+                    source = IrSearchSource.TV,
+                )
+            }
+        }
+    }
+    return results
+}
+
+private fun findIrRemotes(context: Context, query: String, limit: Int): List<FlipperSearchResult> {
+    val combined = findFlipperRemotes(context, query, Int.MAX_VALUE) + findTvRemotes(context, query)
+    return combined
+        .sortedWith(
+            compareByDescending<FlipperSearchResult> { it.score }
+                .thenBy { it.brand }
+                .thenBy { it.model },
+        )
         .take(limit)
 }
 

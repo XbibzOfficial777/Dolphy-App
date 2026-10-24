@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   verify-build-release:
-    name: Test, lint, build and verify signed APK
+    name: Test, build and verify signed APK
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -104,10 +104,11 @@ jobs:
           cat > "$RUNNER_TEMP/release-notes.md" <<EOF
           ## Dolphy ${VERSION_NAME}
 
-          - Antarmuka Dolphy Expressive dengan grid modul adaptif dan kartu yang ramah tema serta ukuran font.
-          - Pencarian modul nyata berdasarkan judul, deskripsi, dan kategori.
-          - Bahasa Indonesia menjadi default; pilihan Indonesia, English, dan Русский tersedia.
-          - Animasi tekan tombol mengikuti pengaturan expressive dan mode performa.
+          - Media casting nyata melalui Google Cast SDK resmi dan DLNA/UPnP dengan penemuan SSDP serta kontrol AVTransport.
+          - Video, audio, dan gambar dapat dipilih; status koneksi dan playback berasal dari CastSession atau respons renderer.
+          - Database IR disinkronkan dari Lucaslhm/Flipper-IRDB dan indexer rekursif kini menjangkau remote dalam direktori bertingkat.
+          - Pencarian global merek/model mencakup database TV dan Flipper, dengan loading, penanganan error, dan route remote yang sesuai.
+          - Antarmuka Dolphy Expressive tetap menggunakan identitas oranye Material 3 dan dukungan Indonesia, English, serta Русский.
 
           ## Verifikasi CI
 
@@ -115,7 +116,7 @@ jobs:
           - Release APK dibuat di GitHub Actions dan ditandatangani dengan kunci rilis tetap dari Secrets.
           - Signature APK dan ZIP alignment diverifikasi pada runner.
 
-          Perilaku perangkat keras fisik BLE, NFC, IR, dan kamera tetap memerlukan validasi pada perangkat nyata; runner GitHub tidak menguji perangkat keras tersebut.
+          Perilaku fisik Chromecast, DLNA, BLE, NFC, IR, kamera, dan hardware lain tetap memerlukan validasi pada perangkat nyata; runner GitHub tidak menguji perangkat tersebut.
           EOF
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" "$APK_PATH" --clobber

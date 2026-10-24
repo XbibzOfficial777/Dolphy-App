@@ -169,7 +169,9 @@
     <string name="ir_storm">TV Be Gone</string>
     <string name="ir_jammer">IR Jammer</string>
     <string name="ir_search_brand">Search Brand</string>
-    <string name="ir_smart_search">Smart Search</string>
+    <string name="ir_smart_search">Search remote brands or models</string>
+    <string name="ir_database_count">%1$d remotes available</string>
+    <string name="ir_search_failed">Remote search failed. Check the database and try again.</string>
     <string name="ir_search">Search</string>
     <string name="ir_loading">Loading...</string>
     <string name="ir_loading_remotes">Loading remotes...</string>
@@ -433,11 +435,40 @@
     
     
 
-    <string name="smarttv_cast_pick_video">Choose a video to send to your TV</string>
-    <string name="smarttv_cast_choose_video">Choose video</string>
+    <string name="smarttv_cast_pick_video">Choose video, audio, or an image to send to your TV</string>
+    <string name="smarttv_cast_choose_video">Choose media</string>
     <string name="smarttv_cast_open_local_site">Open local site</string>
     <string name="smarttv_cast_devices">Devices (%d)</string>
     <string name="smarttv_cast_no_devices">No devices found</string>
+    <string name="cast_permission_title">Device discovery permission</string>
+    <string name="cast_permission_message">Nearby-device permission is required to find TVs on the local network. Dolphy does not simulate device lists.</string>
+    <string name="cast_grant_permission">Allow discovery</string>
+    <string name="cast_media_title">Media to cast</string>
+    <string name="cast_media_none">No media selected</string>
+    <string name="cast_media_clear">Remove</string>
+    <string name="cast_media_preparing">Preparing media server…</string>
+    <string name="cast_devices_subtitle">Google Cast and DLNA renderers actually found on your network</string>
+    <string name="cast_refresh">Refresh discovery</string>
+    <string name="cast_scanning">Discovering DLNA renderers; Google Cast updates automatically…</string>
+    <string name="cast_no_devices_message">Keep your phone and TV on the same Wi-Fi network, then refresh.</string>
+    <string name="cast_connect">Connect</string>
+    <string name="cast_disconnect">Disconnect</string>
+    <string name="cast_connected">Connected</string>
+    <string name="cast_connecting">Connecting…</string>
+    <string name="cast_loading">Loading media…</string>
+    <string name="cast_playing">Playing</string>
+    <string name="cast_paused">Paused</string>
+    <string name="cast_play">Play on TV</string>
+    <string name="cast_pause">Pause</string>
+    <string name="cast_resume">Resume</string>
+    <string name="cast_stop">Stop</string>
+    <string name="cast_protocol_google">Google Cast</string>
+    <string name="cast_protocol_dlna">DLNA / UPnP</string>
+    <string name="cast_local_url">Local URL</string>
+    <string name="cast_connection_error">Connection or playback failed</string>
+    <string name="cast_discovery_error">Renderer discovery failed</string>
+    <string name="cast_media_error">Media could not be prepared</string>
+    <string name="cast_footnote">Connection status comes from CastSession or AVTransport responses. Sending a command is never treated as proof of playback without a device response.</string>
 
     
     <string name="whisperpair_title">WhisperPair</string>
@@ -965,7 +996,7 @@
     <string name="qr_link_or_text">Link or text</string>
 
     
-    <string name="smarttv_cast_card_description">Stream video to TV via Chromecast, DIAL, DLNA and UPnP</string>
+    <string name="smarttv_cast_card_description">Cast video, audio, and images to your TV through Google Cast or DLNA/UPnP</string>
 
     
     <string name="other_dolphy_chat_desc">BLE chat with other Dolphy users</string>

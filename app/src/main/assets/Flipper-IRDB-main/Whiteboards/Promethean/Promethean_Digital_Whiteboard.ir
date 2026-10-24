@@ -2,7 +2,7 @@ Filetype: IR signals file
 Version: 1
 # 
 # Promethean Digital Whiteboard
-# 
+#
 name: POWER
 type: parsed
 protocol: NEC
@@ -86,4 +86,3 @@ type: parsed
 protocol: NEC
 address: 31 00 00 00
 command: CC 00 00 00
-
