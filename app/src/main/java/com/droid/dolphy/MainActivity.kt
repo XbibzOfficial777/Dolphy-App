@@ -282,7 +282,7 @@ fun DolphyTheme(
 
     androidx.compose.runtime.CompositionLocalProvider(
         LocalExpressiveEnabled provides effectiveExpressiveEnabled,
-        LocalAnimatedBackgroundEnabled provides animatedBackgroundEnabled && !reducedMotionEnabled,
+        LocalAnimatedBackgroundEnabled provides (animatedBackgroundEnabled && !reducedMotionEnabled),
         LocalPerformanceModeEnabled provides performanceModeEnabled,
         LocalReducedMotionEnabled provides reducedMotionEnabled,
         LocalDensity provides scaledDensity,
