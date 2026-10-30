@@ -1,12 +1,13 @@
 package com.kyant.backdrop.catalog.components
 
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
@@ -31,8 +32,13 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,9 +48,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
+import kotlinx.coroutines.launch
 
 private fun Modifier.liquidSurface(
     shape: Shape,
@@ -144,6 +153,12 @@ fun LiquidBottomTabs(
     barHeight: Dp = 64.dp,
     content: @Composable RowScope.() -> Unit,
 ) {
+    val density = LocalDensity.current
+    val scope = rememberCoroutineScope()
+    val indicatorPosition = remember { Animatable(0f) }
+    var indicatorInitialized by remember { mutableStateOf(false) }
+    var dragging by remember { mutableStateOf(false) }
+
     BoxWithConstraints(
         modifier = modifier
             .height(barHeight)
@@ -155,22 +170,91 @@ fun LiquidBottomTabs(
     ) {
         val safeTabCount = tabsCount.coerceAtLeast(1)
         val selectedIndex = selectedTabIndex().coerceIn(0, safeTabCount - 1)
+        val currentSelectedIndex by rememberUpdatedState(selectedIndex)
+        val currentOnTabSelected by rememberUpdatedState(onTabSelected)
         val tabWidth = maxWidth / safeTabCount
-        val indicatorOffset by animateDpAsState(
-            targetValue = tabWidth * selectedIndex,
-            animationSpec = spring(dampingRatio = 0.78f, stiffness = 520f),
-            label = "liquid_tab_indicator",
+        val tabWidthPx = with(density) { tabWidth.toPx() }
+        val maxIndicatorPosition = (safeTabCount - 1) * tabWidthPx
+
+        LaunchedEffect(selectedIndex, tabWidthPx, safeTabCount) {
+            val target = selectedIndex * tabWidthPx
+            if (!indicatorInitialized) {
+                indicatorPosition.snapTo(target)
+                indicatorInitialized = true
+            } else if (!dragging) {
+                indicatorPosition.animateTo(
+                    targetValue = target,
+                    animationSpec = spring(dampingRatio = 0.68f, stiffness = 420f),
+                )
+            }
+        }
+
+        val indicatorScaleX by animateFloatAsState(
+            targetValue = if (dragging) 1.08f else 1f,
+            animationSpec = spring(dampingRatio = 0.62f, stiffness = 520f),
+            label = "liquid_tab_stretch_x",
         )
+        val indicatorScaleY by animateFloatAsState(
+            targetValue = if (dragging) 0.96f else 1f,
+            animationSpec = spring(dampingRatio = 0.62f, stiffness = 520f),
+            label = "liquid_tab_stretch_y",
+        )
+        val indicatorOffset = with(density) { indicatorPosition.value.toDp() }
+
         Box(
             modifier = Modifier
                 .offset(x = indicatorOffset)
                 .width(tabWidth)
                 .fillMaxHeight()
+                .graphicsLayer {
+                    scaleX = indicatorScaleX
+                    scaleY = indicatorScaleY
+                }
                 .padding(4.dp)
                 .liquidSurface(CircleShape, MaterialTheme.colorScheme.primary, containerAlpha = 0.82f)
         )
         Row(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(safeTabCount, tabWidthPx) {
+                    if (tabWidthPx <= 0f) return@pointerInput
+                    detectHorizontalDragGestures(
+                        onDragStart = {
+                            dragging = true
+                            scope.launch { indicatorPosition.stop() }
+                        },
+                        onDragEnd = {
+                            val targetIndex = liquidTabTargetIndex(
+                                indicatorPositionPx = indicatorPosition.value,
+                                tabWidthPx = tabWidthPx,
+                                tabsCount = safeTabCount,
+                            )
+                            dragging = false
+                            scope.launch {
+                                indicatorPosition.animateTo(
+                                    targetValue = targetIndex * tabWidthPx,
+                                    animationSpec = spring(dampingRatio = 0.62f, stiffness = 360f),
+                                )
+                            }
+                            currentOnTabSelected(targetIndex)
+                        },
+                        onDragCancel = {
+                            dragging = false
+                            scope.launch {
+                                indicatorPosition.animateTo(
+                                    targetValue = currentSelectedIndex * tabWidthPx,
+                                    animationSpec = spring(dampingRatio = 0.68f, stiffness = 420f),
+                                )
+                            }
+                        },
+                        onHorizontalDrag = { change, dragAmount ->
+                            change.consume()
+                            val nextPosition = (indicatorPosition.value + dragAmount)
+                                .coerceIn(0f, maxIndicatorPosition)
+                            scope.launch { indicatorPosition.snapTo(nextPosition) }
+                        },
+                    )
+                },
             verticalAlignment = Alignment.CenterVertically,
             content = content,
         )

@@ -227,6 +227,7 @@ fun DolphyTheme(
     uiScale: Float = 1f,
     animatedBackgroundEnabled: Boolean = false,
     expressiveEnabled: Boolean = false,
+    performanceModeEnabled: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
@@ -252,6 +253,7 @@ fun DolphyTheme(
     androidx.compose.runtime.CompositionLocalProvider(
         LocalExpressiveEnabled provides expressiveEnabled,
         LocalAnimatedBackgroundEnabled provides animatedBackgroundEnabled,
+        LocalPerformanceModeEnabled provides performanceModeEnabled,
         LocalDensity provides scaledDensity,
     ) {
         MaterialExpressiveTheme(
@@ -599,7 +601,8 @@ class MainActivity : ComponentActivity() {
                 flipperFontScale = flipperFontScale,
                 uiScale = uiScale,
                 animatedBackgroundEnabled = animatedBackgroundEnabled && !performanceModeEnabled,
-                expressiveEnabled = expressiveEnabled && !performanceModeEnabled
+                expressiveEnabled = expressiveEnabled && !performanceModeEnabled,
+                performanceModeEnabled = performanceModeEnabled,
             ) {
                 val backgroundColor = MaterialTheme.colorScheme.background
 
@@ -907,6 +910,7 @@ fun MainScaffold(
     }
 
     CompositionLocalProvider(
+        LocalPerformanceModeEnabled provides performanceModeEnabled,
         LocalLiquidGlassEnabled provides liquidGlassEnabled,
         LocalLiquidGlassButtons provides liquidGlassButtons,
         LocalLiquidGlassTopBars provides liquidGlassTopBars,
@@ -1743,6 +1747,11 @@ private fun LiquidNavigationLabel(
         animationSpec = tween(durationMillis = 180),
         label = "liquid_navigation_content",
     )
+    val selectionScale by animateFloatAsState(
+        targetValue = if (selected) 1.10f else 1f,
+        animationSpec = spring(dampingRatio = 0.64f, stiffness = 520f),
+        label = "liquid_navigation_icon_scale",
+    )
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -1751,12 +1760,18 @@ private fun LiquidNavigationLabel(
             imageVector = icon,
             contentDescription = title,
             tint = contentColor,
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier
+                .size(22.dp)
+                .graphicsLayer {
+                    scaleX = selectionScale
+                    scaleY = selectionScale
+                },
         )
         Text(
             text = title,
             color = contentColor,
             style = MaterialTheme.typography.labelSmall,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
             maxLines = 1,
         )
     }

@@ -2,6 +2,19 @@ package com.droid.dolphy.network
 
 import com.droid.dolphy.DolphyIconButton
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -22,6 +35,8 @@ import android.webkit.WebViewClient
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -2179,63 +2194,106 @@ private fun BrutePasswordDialog(
     onDismiss: () -> Unit,
     onSave: () -> Unit,
 ) {
+    val performanceMode = com.droid.dolphy.LocalPerformanceModeEnabled.current
+    val dialogVisible = remember { MutableTransitionState(false) }
+    LaunchedEffect(Unit) { dialogVisible.targetState = true }
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(dismissOnClickOutside = true)
     ) {
+        AnimatedVisibility(
+            visibleState = dialogVisible,
+            enter = if (performanceMode) {
+                EnterTransition.None
+            } else {
+                fadeIn(animationSpec = tween(150)) +
+                    scaleIn(
+                        initialScale = 0.94f,
+                        animationSpec = spring(dampingRatio = 0.78f, stiffness = 480f),
+                    )
+            },
+            exit = ExitTransition.None,
+        ) {
         Surface(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 700.dp),
             shape = RoundedCornerShape(28.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHighest,
             tonalElevation = 8.dp
         ) {
             Column(
-                modifier = Modifier.padding(20.dp),
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Row(
+                Text(
+                    text = stringResource(R.string.wifi_brute_force_passwords),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = stringResource(R.string.wifi_brute_force_passwords),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    DolphyIconButton(onClick = onImport, enabled = !isImporting && !isBusy) {
-                        if (isImporting) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                        } else {
-                            Icon(
-                                Icons.Filled.Add,
-                                contentDescription = stringResource(R.string.wifi_import_passwords),
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    }
-                }
+                )
 
                 Text(
                     text = stringResource(R.string.wifi_brute_force_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                com.droid.dolphy.AccentButton(
+                    onClick = onImport,
+                    enabled = !isImporting && !isBusy,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (isImporting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    } else {
+                        Icon(
+                            Icons.Filled.Add,
+                            contentDescription = null,
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = if (isImporting) "Mengimpor wordlist…" else "Impor wordlist .txt",
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
                 Text(
-                    text = "Impor .txt · satu kata sandi per baris · disimpan privat di aplikasi",
+                    text = "Satu kata sandi per baris · disimpan privat di aplikasi",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                feedback?.let { message ->
-                    Text(
-                        text = message,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (message.startsWith("Impor gagal") || message.startsWith("Gagal")) {
-                            MaterialTheme.colorScheme.error
+                AnimatedContent(
+                    targetState = feedback,
+                    transitionSpec = {
+                        if (performanceMode) {
+                            EnterTransition.None togetherWith ExitTransition.None
                         } else {
-                            MaterialTheme.colorScheme.primary
-                        },
-                    )
+                            (fadeIn(animationSpec = tween(150)) +
+                                slideInVertically(animationSpec = tween(180)) { it / 3 }) togetherWith
+                                (fadeOut(animationSpec = tween(100)) +
+                                    slideOutVertically(animationSpec = tween(120)) { -it / 3 })
+                        }
+                    },
+                    label = "wordlist_feedback",
+                ) { message ->
+                    if (message != null) {
+                        Text(
+                            text = message,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (message.startsWith("Impor gagal") || message.startsWith("Gagal")) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.primary
+                            },
+                        )
+                    }
                 }
 
                 Surface(
@@ -2329,6 +2387,7 @@ private fun BrutePasswordDialog(
                     }
                 }
             }
+        }
         }
     }
 }

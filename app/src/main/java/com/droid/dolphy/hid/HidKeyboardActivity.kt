@@ -97,6 +97,7 @@ import com.droid.dolphy.LocalLiquidGlassButtons
 import com.droid.dolphy.LocalLiquidGlassEnabled
 import com.droid.dolphy.LocalLiquidGlassNav
 import com.droid.dolphy.LocalLiquidGlassTopBars
+import com.droid.dolphy.LocalPerformanceModeEnabled
 import com.droid.dolphy.R
 import com.droid.dolphy.SectionTopBar
 import androidx.core.app.ActivityCompat
@@ -334,9 +335,11 @@ class HidKeyboardActivity : ComponentActivity(), KeyboardService.Listener {
                 flipperFontScale = flipperFontScale,
                 uiScale = uiScale,
                 animatedBackgroundEnabled = animatedBackgroundEnabled,
-                expressiveEnabled = expressiveEnabled
+                expressiveEnabled = expressiveEnabled,
+                performanceModeEnabled = performanceModeEnabled,
             ) {
                 CompositionLocalProvider(
+                    LocalPerformanceModeEnabled provides performanceModeEnabled,
                     LocalLiquidGlassEnabled provides liquidGlassEnabled,
                     LocalLiquidGlassButtons provides liquidButtons,
                     LocalLiquidGlassTopBars provides liquidTopBars,

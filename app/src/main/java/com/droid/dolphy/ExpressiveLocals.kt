@@ -6,6 +6,7 @@ import com.kyant.backdrop.Backdrop
 
 val LocalExpressiveEnabled = staticCompositionLocalOf { false }
 val LocalAnimatedBackgroundEnabled = staticCompositionLocalOf { false }
+val LocalPerformanceModeEnabled = staticCompositionLocalOf { false }
 
 
 val LocalLiquidGlassEnabled = staticCompositionLocalOf { false }

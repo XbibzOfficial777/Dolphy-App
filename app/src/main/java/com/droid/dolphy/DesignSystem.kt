@@ -11,6 +11,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -594,10 +595,33 @@ fun SettingsItem(
     onClick: (() -> Unit)? = null,
     content: @Composable RowScope.() -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val performanceMode = LocalPerformanceModeEnabled.current
+    val pressScale by animateFloatAsState(
+        targetValue = if (pressed && onClick != null && !performanceMode) 0.985f else 1f,
+        animationSpec = spring(dampingRatio = 0.72f, stiffness = 700f),
+        label = "settings_item_press",
+    )
+
     Row(
         modifier = modifier
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+            }
             .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(
+                        interactionSource = interactionSource,
+                        indication = LocalIndication.current,
+                        onClick = onClick,
+                    )
+                } else {
+                    Modifier
+                }
+            )
             .padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         content = content
@@ -783,10 +807,11 @@ fun AccentButton(
     val buttonInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
     val isPressed by buttonInteractionSource.collectIsPressedAsState()
     val expressive = LocalExpressiveEnabled.current
+    val performanceMode = LocalPerformanceModeEnabled.current
     val pressScale by animateFloatAsState(
-        targetValue = if (isPressed && enabled && expressive) 0.96f else 1f,
+        targetValue = if (isPressed && enabled && !performanceMode) 0.96f else 1f,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
+            dampingRatio = if (expressive) 0.68f else Spring.DampingRatioNoBouncy,
             stiffness = Spring.StiffnessHigh,
         ),
         label = "accent_button_press",
