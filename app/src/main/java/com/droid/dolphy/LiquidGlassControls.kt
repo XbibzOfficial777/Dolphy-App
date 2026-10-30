@@ -43,7 +43,7 @@ fun DolphyIconButton(
             backdrop = backdrop,
             modifier = modifier.size(36.dp),
             tint = tint,
-            surfaceColor = tint,
+            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             applyDefaultHeight = false,
             contentPaddingHorizontal = 0.dp,
         ) {

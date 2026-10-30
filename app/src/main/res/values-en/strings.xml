@@ -1067,7 +1067,7 @@
     <string name="wifi_print_cancel">Cancel</string>
     <string name="settings_ui_scale">Interface scale</string>
     <string name="settings_liquid_glass">Liquid Glass</string>
-    <string name="settings_liquid_glass_summary">Glass navigation bar (LiquidBottomTabs)</string>
+    <string name="settings_liquid_glass_summary">Glass surfaces for buttons, top bars, and navigation; effects pause in Performance Mode</string>
     <string name="settings_liquid_glass_buttons">Buttons</string>
     <string name="settings_liquid_glass_topbars">Top bars</string>
     <string name="settings_liquid_glass_nav">Navigation</string>

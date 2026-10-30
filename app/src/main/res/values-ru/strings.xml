@@ -1050,7 +1050,7 @@
     <string name="wifi_print_cancel">Отмена</string>
     <string name="settings_ui_scale">Масштаб интерфейса</string>
     <string name="settings_liquid_glass">Liquid Glass</string>
-    <string name="settings_liquid_glass_summary">Стеклянная панель навигации (LiquidBottomTabs)</string>
+    <string name="settings_liquid_glass_summary">Стеклянные кнопки, верхние панели и навигация; эффекты отключаются в режиме производительности</string>
     <string name="settings_liquid_glass_buttons">Кнопки</string>
     <string name="settings_liquid_glass_topbars">Топбары</string>
     <string name="settings_liquid_glass_nav">Навигация</string>

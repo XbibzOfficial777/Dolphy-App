@@ -1024,7 +1024,7 @@
     <string name="wifi_print_cancel">Batal</string>
     <string name="settings_ui_scale">Skala antarmuka</string>
     <string name="settings_liquid_glass">Liquid Glass</string>
-    <string name="settings_liquid_glass_summary">Bilah navigasi kaca (LiquidBottomTabs)</string>
+    <string name="settings_liquid_glass_summary">Permukaan kaca untuk tombol, bilah atas, dan navigasi; efek dijeda dalam Mode Kinerja</string>
     <string name="settings_liquid_glass_buttons">Tombol</string>
     <string name="settings_liquid_glass_topbars">Bilah atas</string>
     <string name="settings_liquid_glass_nav">Navigasi</string>

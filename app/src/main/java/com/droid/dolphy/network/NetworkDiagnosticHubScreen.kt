@@ -61,9 +61,6 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.ui.draw.clip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -132,6 +129,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -178,27 +176,49 @@ private const val STOCK_GROUP_NAME = "Kata sandi bawaan"
 private data class PasswordGroupDto(
     val name: String,
     val passwords: List<String>,
-    val selected: Boolean
+    val selected: Boolean,
+    val sourceFile: String? = null,
+    val count: Int = 0,
+    val validCount: Int = 0,
 )
 
-private class PasswordGroup(val name: String) {
-    var selected by mutableStateOf(true)
-    val passwords = mutableListOf<String>()
-    val isImported: Boolean get() = name != STOCK_GROUP_NAME
-
-    fun allPasswords(): List<String> = passwords.toList()
+private abstract class PasswordCursor {
+    abstract fun nextPassword(): String?
+    open fun close() = Unit
 }
 
-private fun getFileName(context: android.content.Context, uri: android.net.Uri): String {
-    var name = "Imported"
-    val cursor = context.contentResolver.query(uri, null, null, null, null)
-    cursor?.use {
-        if (it.moveToFirst()) {
-            val idx = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-            if (idx >= 0) name = it.getString(idx) ?: "Imported"
+private class ListPasswordCursor(values: List<String>) : PasswordCursor() {
+    private val iterator = values.iterator()
+    override fun nextPassword(): String? = if (iterator.hasNext()) iterator.next() else null
+}
+
+private class FilePasswordCursor(private val reader: BufferedReader) : PasswordCursor() {
+    override fun nextPassword(): String? {
+        while (true) {
+            val line = reader.readLine() ?: return null
+            normalizeWordlistLine(line)?.let { return it }
         }
     }
-    return name.substringBeforeLast(".").ifBlank { "Imported" }
+
+    override fun close() = reader.close()
+}
+
+private class PasswordGroup(
+    val name: String,
+    val sourceFile: String? = null,
+    private val fileCount: Int = 0,
+    private val fileValidCount: Int = 0,
+) {
+    var selected by mutableStateOf(true)
+    val passwords = mutableListOf<String>()
+    val isImported: Boolean get() = sourceFile != null || name != STOCK_GROUP_NAME
+    val count: Int get() = if (sourceFile == null) passwords.size else fileCount
+    val validCount: Int get() = if (sourceFile == null) passwords.count { it.length >= 8 } else fileValidCount
+
+    fun openCursor(context: android.content.Context): PasswordCursor {
+        return if (sourceFile == null) ListPasswordCursor(passwords)
+        else FilePasswordCursor(WordlistStore.openReader(context, sourceFile))
+    }
 }
 
 @Composable
@@ -286,12 +306,21 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
     val prefs = remember { context.getSharedPreferences("wifi_passwords", Context.MODE_PRIVATE) }
 
     fun saveGroups(groups: List<PasswordGroup>) {
-        val dtos = groups.map { PasswordGroupDto(it.name, it.passwords, it.selected) }
+        val dtos = groups.map { group ->
+            PasswordGroupDto(
+                name = group.name,
+                passwords = if (group.sourceFile == null) group.passwords.toList() else emptyList(),
+                selected = group.selected,
+                sourceFile = group.sourceFile,
+                count = group.count,
+                validCount = group.validCount,
+            )
+        }
         try {
             val json = Json.encodeToString(dtos)
             prefs.edit().putString("groups", json).apply()
         } catch (e: Exception) {
-
+            android.util.Log.w("WordlistStore", "Failed to save groups", e)
         }
     }
 
@@ -299,10 +328,24 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
         val json = prefs.getString("groups", null) ?: return emptyList()
         return try {
             val dtos = Json.decodeFromString<List<PasswordGroupDto>>(json)
-            dtos.map { dto ->
-                PasswordGroup(dto.name).apply {
-                    passwords.addAll(dto.passwords)
-                    selected = dto.selected
+            dtos.mapNotNull { dto ->
+                val sourceFile = dto.sourceFile
+                if (sourceFile != null) {
+                    val fileExists = runCatching {
+                        WordlistStore.exists(context, sourceFile)
+                    }.getOrDefault(false)
+                    if (!fileExists) return@mapNotNull null
+                    PasswordGroup(
+                        name = dto.name,
+                        sourceFile = sourceFile,
+                        fileCount = dto.count,
+                        fileValidCount = dto.validCount,
+                    ).apply { selected = dto.selected }
+                } else {
+                    PasswordGroup(dto.name).apply {
+                        passwords.addAll(dto.passwords)
+                        selected = dto.selected
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -336,30 +379,49 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
 
     fun appendLog(message: String) {
         val stamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+        if (sendLogs.size >= 500) sendLogs.removeAt(0)
         sendLogs += "[$stamp] $message"
     }
 
+    var importingWordlist by remember { mutableStateOf(false) }
+    var deletingWordlist by remember { mutableStateOf(false) }
+    var wordlistFeedback by remember { mutableStateOf<String?>(null) }
+    var pendingWordlistDeletion by remember { mutableStateOf<PasswordGroup?>(null) }
+
     val fileImportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
-        if (uri != null) {
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            importingWordlist = true
+            wordlistFeedback = "Mengimpor wordlist…"
             try {
-                val groupName = getFileName(context, uri)
-                val inputStream = context.contentResolver.openInputStream(uri)
-                val text = inputStream?.bufferedReader()?.readText() ?: ""
-                inputStream?.close()
-                val imported = text.split("\\s+".toRegex())
-                    .map { it.trim() }
-                    .filter { it.isNotBlank() }
-                    .distinct()
-                if (imported.isNotEmpty()) {
-                    val group = PasswordGroup(groupName)
-                    group.passwords.addAll(imported)
-                    passwordGroups.add(group)
-                    saveGroups(passwordGroups)
+                val imported = withContext(Dispatchers.IO) {
+                    WordlistStore.import(context, uri)
                 }
+                val groupName = uniqueWordlistName(
+                    imported.suggestedName,
+                    passwordGroups.map { it.name },
+                )
+                passwordGroups.add(
+                    PasswordGroup(
+                        name = groupName,
+                        sourceFile = imported.fileName,
+                        fileCount = imported.count,
+                        fileValidCount = imported.validCount,
+                    )
+                )
+                saveGroups(passwordGroups)
+                wordlistFeedback = "$groupName: ${imported.count} entri · ${imported.validCount} siap dicoba"
+                appendLog("Wordlist imported: $groupName (${imported.count} entries)")
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                appendLog("Import error: ${e.message}")
+                val message = e.message ?: e.javaClass.simpleName
+                wordlistFeedback = "Impor gagal: $message"
+                appendLog("Wordlist import error: $message")
+            } finally {
+                importingWordlist = false
             }
         }
     }
@@ -947,71 +1009,85 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
         sendLogs.clear()
         dialogStage = HubDialogStage.BruteForce
         val selectedGroups = passwordGroups.filter { it.selected }
-        val ordered = selectedGroups
-            .flatMap { it.allPasswords() }
-            .filter { it.length >= 8 }
-            .distinct()
-        val totalSelected = selectedGroups.sumOf { it.allPasswords().size }
+        val totalCandidates = selectedGroups.sumOf { it.validCount.toLong() }
         val targetSsid = network.ssid.trim('"')
         appendLog("Starting Brute Force: $targetSsid")
         appendLog("Groups: ${selectedGroups.joinToString { it.name }}")
-        appendLog("Passwords to try: ${ordered.size} (${totalSelected - ordered.size} skipped, < 8 chars)")
+        appendLog("Password candidates: $totalCandidates (entries < 8 chars are skipped)")
+        if (selectedGroups.isEmpty() || totalCandidates == 0L) {
+            appendLog("Select a wordlist containing at least one password of 8 characters or more.")
+            return
+        }
 
         bruteForceJob = scope.launch(Dispatchers.IO) {
-
-            withContext(Dispatchers.Main) {
-                appendLog("Preparing radio (leave target / clear old suggestions)...")
-            }
-            prepareRadioForBrute(wifiManager, targetSsid)
-
-            if (isFullyConnectedToSsid(wifiManager, targetSsid)) {
+            var attempted = 0L
+            var found = false
+            var failed = false
+            try {
                 withContext(Dispatchers.Main) {
-                    appendLog("Still on $targetSsid. Disconnect from this network in system Wi-Fi and retry.")
-                    appendLog("Scan finished.")
+                    appendLog("Preparing radio (leave target / clear old suggestions)...")
                 }
-                return@launch
-            }
+                prepareRadioForBrute(wifiManager, targetSsid)
 
-            for (index in ordered.indices) {
-                if (!isActive) break
-                val password = ordered[index]
-
-                withContext(Dispatchers.Main) {
-                    currentBrutePassword = password
-                    appendLog("[${index + 1}/${ordered.size}] Testing: $password")
+                if (isFullyConnectedToSsid(wifiManager, targetSsid)) {
+                    withContext(Dispatchers.Main) {
+                        appendLog("Still on $targetSsid. Disconnect from this network in system Wi-Fi and retry.")
+                        appendLog("Scan finished.")
+                    }
+                    return@launch
                 }
 
+                for (group in selectedGroups) {
+                    if (!isActive || found) break
+                    val cursor = group.openCursor(context)
+                    try {
+                        while (isActive && !found) {
+                            val password = cursor.nextPassword() ?: break
+                            if (password.length < 8) continue
+                            attempted++
 
-                val result = testWifiPassword(context, wifiManager, targetSsid, password)
+                            withContext(Dispatchers.Main) {
+                                currentBrutePassword = password
+                                appendLog("[$attempted/$totalCandidates] Testing: $password")
+                            }
 
-                if (!isActive) break
+                            val result = testWifiPassword(context, wifiManager, targetSsid, password)
+                            if (!isActive) break
 
-                if (result) {
-
-                    val found = password
-                    withContext(Dispatchers.Main) {
-                        currentBrutePassword = found
-                        appendLog("SUCCESS! Password found: $found")
-                        foundPassword = found
-                        bruteForceSuccess = true
-                        com.droid.dolphy.trackWifiBruteSuccess(context)
-                        haptics.performHapticFeedback(
-                            androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress,
-                        )
+                            if (result) {
+                                found = true
+                                withContext(Dispatchers.Main) {
+                                    currentBrutePassword = password
+                                    appendLog("SUCCESS! Password found: $password")
+                                    foundPassword = password
+                                    bruteForceSuccess = true
+                                    com.droid.dolphy.trackWifiBruteSuccess(context)
+                                    haptics.performHapticFeedback(
+                                        androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress,
+                                    )
+                                }
+                            } else {
+                                withContext(Dispatchers.Main) {
+                                    appendLog("Failed: $password")
+                                }
+                                settleAfterFailedAttempt(wifiManager, targetSsid)
+                            }
+                        }
+                    } finally {
+                        runCatching { cursor.close() }
                     }
-
-                    break
-                } else {
-                    withContext(Dispatchers.Main) {
-                        appendLog("Failed: $password")
-                    }
-
-                    settleAfterFailedAttempt(wifiManager, targetSsid)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                failed = true
+                withContext(Dispatchers.Main) {
+                    appendLog("Wordlist read/test error: ${e.message ?: e.javaClass.simpleName}")
                 }
             }
             if (isActive) {
                 withContext(Dispatchers.Main) {
-                    appendLog("Scan finished.")
+                    appendLog(if (failed) "Scan stopped after an error." else "Scan finished.")
                 }
             }
         }
@@ -1784,9 +1860,70 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
     if (showPasswordDialog) {
         BrutePasswordDialog(
             passwordGroups = passwordGroups,
-            onImport = { fileImportLauncher.launch("text/plain") },
+            isImporting = importingWordlist,
+            isBusy = deletingWordlist,
+            feedback = wordlistFeedback,
+            onImport = { fileImportLauncher.launch(arrayOf("text/plain", "application/octet-stream")) },
+            onDeleteRequest = { group ->
+                if (bruteForceJob?.isActive == true) {
+                    wordlistFeedback = "Hentikan brute force sebelum menghapus wordlist."
+                } else {
+                    pendingWordlistDeletion = group
+                }
+            },
             onDismiss = { showPasswordDialog = false },
-            onSave = { saveGroups(passwordGroups) }
+            onSave = { saveGroups(passwordGroups) },
+        )
+    }
+
+    pendingWordlistDeletion?.let { group ->
+        AlertDialog(
+            onDismissRequest = { if (!deletingWordlist) pendingWordlistDeletion = null },
+            title = { Text("Hapus wordlist?") },
+            text = {
+                Text("${group.name} akan dihapus dari aplikasi. Tindakan ini tidak dapat dibatalkan.")
+            },
+            confirmButton = {
+                com.droid.dolphy.AccentButton(
+                    onClick = {
+                        scope.launch {
+                            deletingWordlist = true
+                            try {
+                                group.sourceFile?.let { sourceFile ->
+                                    withContext(Dispatchers.IO) {
+                                        WordlistStore.delete(context, sourceFile)
+                                    }
+                                }
+                                passwordGroups.remove(group)
+                                saveGroups(passwordGroups)
+                                wordlistFeedback = "${group.name} dihapus"
+                                pendingWordlistDeletion = null
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                wordlistFeedback = "Gagal menghapus: ${e.message ?: e.javaClass.simpleName}"
+                            } finally {
+                                deletingWordlist = false
+                            }
+                        }
+                    },
+                    enabled = !deletingWordlist,
+                ) {
+                    if (deletingWordlist) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text("Hapus")
+                    }
+                }
+            },
+            dismissButton = {
+                com.droid.dolphy.DolphyTextButton(
+                    onClick = { pendingWordlistDeletion = null },
+                    enabled = !deletingWordlist,
+                ) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
         )
     }
 }
@@ -2034,9 +2171,13 @@ private fun testPasswordViaSuggestion(
 @Composable
 private fun BrutePasswordDialog(
     passwordGroups: MutableList<PasswordGroup>,
+    isImporting: Boolean,
+    isBusy: Boolean,
+    feedback: String?,
     onImport: () -> Unit,
+    onDeleteRequest: (PasswordGroup) -> Unit,
     onDismiss: () -> Unit,
-    onSave: () -> Unit
+    onSave: () -> Unit,
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -2062,8 +2203,16 @@ private fun BrutePasswordDialog(
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
-                    DolphyIconButton(onClick = onImport) {
-                        Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.wifi_import_passwords), tint = MaterialTheme.colorScheme.primary)
+                    DolphyIconButton(onClick = onImport, enabled = !isImporting && !isBusy) {
+                        if (isImporting) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(
+                                Icons.Filled.Add,
+                                contentDescription = stringResource(R.string.wifi_import_passwords),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
                     }
                 }
 
@@ -2072,6 +2221,22 @@ private fun BrutePasswordDialog(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Text(
+                    text = "Impor .txt · satu kata sandi per baris · disimpan privat di aplikasi",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                feedback?.let { message ->
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (message.startsWith("Impor gagal") || message.startsWith("Gagal")) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        },
+                    )
+                }
 
                 Surface(
                     modifier = Modifier
@@ -2085,87 +2250,71 @@ private fun BrutePasswordDialog(
                         contentPadding = PaddingValues(4.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        itemsIndexed(passwordGroups, key = { _, group -> group.name }) { index, group ->
-                            val count = group.passwords.size
-                            val validCount = group.passwords.count { it.length >= 8 }
-                            val canDismiss = group.isImported
-
-                            val dismissState = rememberSwipeToDismissBoxState(
-                                confirmValueChange = { value ->
-                                    if (canDismiss && value == SwipeToDismissBoxValue.EndToStart) {
-                                        passwordGroups.removeAt(index)
-                                        onSave()
-                                        true
-                                    } else false
-                                }
-                            )
-                            Box(modifier = Modifier.clip(RoundedCornerShape(12.dp))) {
-                                SwipeToDismissBox(
-                                    state = dismissState,
-                                    backgroundContent = {
-                                        if (canDismiss) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxSize()
-                                                    .clip(RoundedCornerShape(12.dp))
-                                                    .background(Color(0xFFFF5252)),
-                                                contentAlignment = Alignment.CenterEnd
-                                            ) {
-                                                Icon(
-                                                    Icons.Default.Delete,
-                                                    contentDescription = stringResource(R.string.cd_delete),
-                                                    tint = Color.White,
-                                                    modifier = Modifier.padding(end = 24.dp)
-                                                )
-                                            }
-                                        }
-                                    },
-                                    enableDismissFromStartToEnd = false,
-                                    enableDismissFromEndToStart = canDismiss,
+                        itemsIndexed(
+                            passwordGroups,
+                            key = { index, group -> group.sourceFile ?: "legacy-${group.name}-$index" },
+                        ) { _, group ->
+                            MaterialCard(
+                                modifier = Modifier.fillMaxWidth(),
+                                accentColor = if (group.selected) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                                },
+                                cornerRadius = 12.dp,
+                                contentPadding = 0.dp,
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 ) {
-                                MaterialCard(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    accentColor = if (group.selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                                    cornerRadius = 12.dp,
-                                    contentPadding = 0.dp
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        Checkbox(
-                                            checked = group.selected,
-                                            onCheckedChange = {
-                                                group.selected = it
-                                                onSave()
-                                            }
+                                    Checkbox(
+                                        checked = group.selected,
+                                        onCheckedChange = {
+                                            group.selected = it
+                                            onSave()
+                                        },
+                                    )
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = group.name,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface,
                                         )
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = group.name,
-                                                style = MaterialTheme.typography.titleMedium,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-                                            Text(
-                                                text = stringResource(R.string.wifi_passwords_count, count, validCount),
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
+                                        Text(
+                                            text = stringResource(
+                                                R.string.wifi_passwords_count,
+                                                group.count,
+                                                group.validCount,
+                                            ),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
                                         if (group.isImported) {
                                             Text(
-                                                text = "diimpor",
+                                                text = if (group.sourceFile == null) "impor lama" else "file .txt",
                                                 style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.primary
+                                                color = MaterialTheme.colorScheme.primary,
+                                            )
+                                        }
+                                    }
+                                    if (group.isImported) {
+                                        DolphyIconButton(
+                                            onClick = { onDeleteRequest(group) },
+                                            enabled = !isBusy && !isImporting,
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Delete,
+                                                contentDescription = "Hapus ${group.name}",
+                                                tint = MaterialTheme.colorScheme.error,
                                             )
                                         }
                                     }
                                 }
-                            }
                             }
                         }
                     }

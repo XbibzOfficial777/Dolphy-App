@@ -318,7 +318,7 @@ class HidKeyboardActivity : ComponentActivity(), KeyboardService.Listener {
 
             val accentColor = Color(accentColorInt)
 
-            val liquidGlassEnabled = false
+            val liquidGlassEnabled = settingsPrefs.getBoolean("liquid_glass_enabled", false) && !performanceModeEnabled
             val liquidButtons = remember { settingsPrefs.getBoolean("liquid_glass_buttons", true) }
             val liquidTopBars = remember { settingsPrefs.getBoolean("liquid_glass_topbars", true) }
             val liquidNav = remember { settingsPrefs.getBoolean("liquid_glass_nav", true) }

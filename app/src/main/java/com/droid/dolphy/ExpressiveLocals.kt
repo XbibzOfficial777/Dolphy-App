@@ -28,15 +28,21 @@ val LocalLiquidGlassContentBackdrop = staticCompositionLocalOf<Backdrop?> { null
 
 @Composable
 fun isLiquidGlassChrome(): Boolean =
-    false
+    LocalLiquidGlassEnabled.current &&
+        LocalLiquidGlassButtons.current &&
+        LocalLiquidGlassBackdrop.current != null
 
 
 @Composable
 fun isLiquidGlassTopBarChrome(): Boolean =
-    false
+    LocalLiquidGlassEnabled.current &&
+        LocalLiquidGlassTopBars.current &&
+        LocalLiquidGlassBackdrop.current != null
 
 
 @Composable
 fun isLiquidGlassNavChrome(): Boolean =
-    false
+    LocalLiquidGlassEnabled.current &&
+        LocalLiquidGlassNav.current &&
+        LocalLiquidGlassBackdrop.current != null
 

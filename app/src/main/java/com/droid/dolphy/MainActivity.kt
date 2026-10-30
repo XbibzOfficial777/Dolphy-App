@@ -731,6 +731,7 @@ fun MainScreen(
 ) {
     val navController = rememberNavController()
     val expressiveEnabled by spamViewModel.expressiveEnabled.collectAsState()
+    val performanceModeEnabled by spamViewModel.performanceModeEnabled.collectAsState()
     val lastSeenVersion by spamViewModel.lastSeenVersion.collectAsState()
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
@@ -771,10 +772,34 @@ fun MainScreen(
     NavHost(
         navController = navController,
         startDestination = "main_scaffold",
-        enterTransition = { if (expressiveEnabled) expressiveEnterTransition() else cornerEnterTransition() },
-        exitTransition = { if (expressiveEnabled) expressiveExitTransition() else cornerExitTransition() },
-        popEnterTransition = { if (expressiveEnabled) expressivePopEnterTransition() else cornerPopEnterTransition() },
-        popExitTransition = { if (expressiveEnabled) expressivePopExitTransition() else cornerPopExitTransition() }
+        enterTransition = {
+            when {
+                performanceModeEnabled -> EnterTransition.None
+                expressiveEnabled -> expressiveEnterTransition()
+                else -> cornerEnterTransition()
+            }
+        },
+        exitTransition = {
+            when {
+                performanceModeEnabled -> ExitTransition.None
+                expressiveEnabled -> expressiveExitTransition()
+                else -> cornerExitTransition()
+            }
+        },
+        popEnterTransition = {
+            when {
+                performanceModeEnabled -> EnterTransition.None
+                expressiveEnabled -> expressivePopEnterTransition()
+                else -> cornerPopEnterTransition()
+            }
+        },
+        popExitTransition = {
+            when {
+                performanceModeEnabled -> ExitTransition.None
+                expressiveEnabled -> expressivePopExitTransition()
+                else -> cornerPopExitTransition()
+            }
+        }
     ) {
         composable("main_scaffold") { MainScaffold(spamViewModel, dolphyViewModel, nfcViewModel, navController, pendingNavRoute) }
         composable("accent_color") { AccentColorScreen(spamViewModel) { navController.popBackStack() } }
@@ -805,10 +830,11 @@ fun MainScaffold(
     val animatedBackgroundEnabled by spamViewModel.animatedBackgroundEnabled.collectAsState()
     val performanceModeEnabled by spamViewModel.performanceModeEnabled.collectAsState()
     val expressiveEnabled by spamViewModel.expressiveEnabled.collectAsState()
-    val liquidGlassEnabled = false
-    val liquidGlassButtons = false
-    val liquidGlassTopBars = false
-    val liquidGlassNav = false
+    val liquidGlassPreference by spamViewModel.liquidGlassEnabled.collectAsState()
+    val liquidGlassEnabled = liquidGlassPreference && !performanceModeEnabled
+    val liquidGlassButtons by spamViewModel.liquidGlassButtons.collectAsState()
+    val liquidGlassTopBars by spamViewModel.liquidGlassTopBars.collectAsState()
+    val liquidGlassNav by spamViewModel.liquidGlassNav.collectAsState()
     val fabDestinationRoute by spamViewModel.fabDestinationRoute.collectAsState()
     val fabEnabled by spamViewModel.fabEnabled.collectAsState()
     val functionDestinations = functionDestinationSections().flatMap { it.second }
@@ -933,28 +959,44 @@ fun MainScaffold(
             startDestination = if (appStyleMode == 1) "other" else "bluetooth",
             modifier = Modifier.fillMaxSize(),
             enterTransition = {
-                rootSectionEnterTransition(
-                    initialRoute = initialState.destination.route.orEmpty(),
-                    targetRoute = targetState.destination.route.orEmpty()
-                ) ?: if (expressiveEnabled) expressiveEnterTransition() else cornerEnterTransition()
+                if (performanceModeEnabled) {
+                    EnterTransition.None
+                } else {
+                    rootSectionEnterTransition(
+                        initialRoute = initialState.destination.route.orEmpty(),
+                        targetRoute = targetState.destination.route.orEmpty()
+                    ) ?: if (expressiveEnabled) expressiveEnterTransition() else cornerEnterTransition()
+                }
             },
             exitTransition = {
-                rootSectionExitTransition(
-                    initialRoute = initialState.destination.route.orEmpty(),
-                    targetRoute = targetState.destination.route.orEmpty()
-                ) ?: if (expressiveEnabled) expressiveExitTransition() else cornerExitTransition()
+                if (performanceModeEnabled) {
+                    ExitTransition.None
+                } else {
+                    rootSectionExitTransition(
+                        initialRoute = initialState.destination.route.orEmpty(),
+                        targetRoute = targetState.destination.route.orEmpty()
+                    ) ?: if (expressiveEnabled) expressiveExitTransition() else cornerExitTransition()
+                }
             },
             popEnterTransition = {
-                rootSectionEnterTransition(
-                    initialRoute = initialState.destination.route.orEmpty(),
-                    targetRoute = targetState.destination.route.orEmpty()
-                ) ?: if (expressiveEnabled) expressivePopEnterTransition() else cornerPopEnterTransition()
+                if (performanceModeEnabled) {
+                    EnterTransition.None
+                } else {
+                    rootSectionEnterTransition(
+                        initialRoute = initialState.destination.route.orEmpty(),
+                        targetRoute = targetState.destination.route.orEmpty()
+                    ) ?: if (expressiveEnabled) expressivePopEnterTransition() else cornerPopEnterTransition()
+                }
             },
             popExitTransition = {
-                rootSectionExitTransition(
-                    initialRoute = initialState.destination.route.orEmpty(),
-                    targetRoute = targetState.destination.route.orEmpty()
-                ) ?: if (expressiveEnabled) expressivePopExitTransition() else cornerPopExitTransition()
+                if (performanceModeEnabled) {
+                    ExitTransition.None
+                } else {
+                    rootSectionExitTransition(
+                        initialRoute = initialState.destination.route.orEmpty(),
+                        targetRoute = targetState.destination.route.orEmpty()
+                    ) ?: if (expressiveEnabled) expressivePopExitTransition() else cornerPopExitTransition()
+                }
             }
         ) {
             composable(
@@ -1299,29 +1341,61 @@ fun MainScaffold(
 
         AnimatedVisibility(
             visible = appStyleMode != 1,
-            enter = slideInVertically(initialOffsetY = { it }),
-            exit = slideOutVertically(targetOffsetY = { it }),
+            enter = if (performanceModeEnabled) {
+                EnterTransition.None
+            } else {
+                slideInVertically(
+                    animationSpec = spring(dampingRatio = 0.82f, stiffness = 520f),
+                    initialOffsetY = { it / 3 },
+                ) + fadeIn(animationSpec = tween(160))
+            },
+            exit = if (performanceModeEnabled) {
+                ExitTransition.None
+            } else {
+                slideOutVertically(
+                    animationSpec = tween(160, easing = FastOutSlowInEasing),
+                    targetOffsetY = { it / 4 },
+                ) + fadeOut(animationSpec = tween(120))
+            },
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
             PluginSurfaceExtensionHost("bottom_bar", screenNavController) {
-                DolphyUnifiedBottomBar(
-                    bluetoothSelected = bluetoothSelected,
-                    modulesSelected = otherSelected,
-                    settingsSelected = settingsSelected,
-                    onBluetoothClick = { navigateToSectionRoot("bluetooth") },
-                    onModulesClick = { navigateToSectionRoot("other") },
-                    onSettingsClick = { navigateToSectionRoot("settings") },
-                    fabIcon = fabDestination?.icon ?: Icons.Default.Extension,
-                    fabTitle = fabDestination?.title ?: stringResource(R.string.nav_modules),
-                    onFabClick = {
-                        if (fabDestination == null) {
-                            navigateToSectionRoot("other")
-                        } else {
-                            openFunctionDestination(fabDestination, screenNavController, context)
-                        }
-                    },
-                    fabEnabled = fabEnabled,
-                )
+                val openFabDestination = {
+                    if (fabDestination == null) {
+                        navigateToSectionRoot("other")
+                    } else {
+                        openFunctionDestination(fabDestination, screenNavController, context)
+                    }
+                }
+                if (controlsBackdrop != null && isLiquidGlassNavChrome()) {
+                    LiquidGlassBottomNavigation(
+                        backdrop = controlsBackdrop,
+                        bluetoothSelected = bluetoothSelected,
+                        otherSelected = otherSelected,
+                        settingsSelected = settingsSelected,
+                        onBluetoothClick = { navigateToSectionRoot("bluetooth") },
+                        onOtherClick = { navigateToSectionRoot("other") },
+                        onSettingsClick = { navigateToSectionRoot("settings") },
+                        fabIcon = fabDestination?.icon ?: Icons.Default.Extension,
+                        fabTitle = fabDestination?.title ?: stringResource(R.string.nav_modules),
+                        onFabClick = openFabDestination,
+                        fabEnabled = fabEnabled,
+                    )
+                } else {
+                    DolphyUnifiedBottomBar(
+                        bluetoothSelected = bluetoothSelected,
+                        modulesSelected = otherSelected,
+                        settingsSelected = settingsSelected,
+                        onBluetoothClick = { navigateToSectionRoot("bluetooth") },
+                        onModulesClick = { navigateToSectionRoot("other") },
+                        onSettingsClick = { navigateToSectionRoot("settings") },
+                        fabIcon = fabDestination?.icon ?: Icons.Default.Extension,
+                        fabTitle = fabDestination?.title ?: stringResource(R.string.nav_modules),
+                        onFabClick = openFabDestination,
+                        fabEnabled = fabEnabled,
+                        animationsEnabled = !performanceModeEnabled,
+                    )
+                }
             }
         }
 
@@ -1453,6 +1527,7 @@ private fun DolphyUnifiedBottomBar(
     fabTitle: String,
     onFabClick: () -> Unit,
     fabEnabled: Boolean = true,
+    animationsEnabled: Boolean = true,
 ) {
     val items = listOf(
         DolphyNavigationItem(stringResource(R.string.nav_bluetooth), Icons.Default.Bluetooth, bluetoothSelected, onBluetoothClick),
@@ -1473,10 +1548,12 @@ private fun DolphyUnifiedBottomBar(
                 val shape = RoundedCornerShape(24.dp)
                 val containerColor by animateColorAsState(
                     targetValue = if (item.selected) MaterialTheme.colorScheme.primaryFixed else MaterialTheme.colorScheme.surfaceContainer,
+                    animationSpec = if (animationsEnabled) tween(180) else snap(),
                     label = "bottom_bar_container",
                 )
                 val contentColor by animateColorAsState(
                     targetValue = if (item.selected) MaterialTheme.colorScheme.onPrimaryFixed else MaterialTheme.colorScheme.onSurfaceVariant,
+                    animationSpec = if (animationsEnabled) tween(180) else snap(),
                     label = "bottom_bar_content",
                 )
                 Row(
@@ -1485,7 +1562,13 @@ private fun DolphyUnifiedBottomBar(
                         .background(containerColor, shape)
                         .clickable(onClick = item.onClick)
                         .padding(horizontal = if (item.selected) 16.dp else 12.dp, vertical = 12.dp)
-                        .animateContentSize(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)),
+                        .animateContentSize(
+                            animationSpec = if (animationsEnabled) {
+                                spring(stiffness = Spring.StiffnessMediumLow)
+                            } else {
+                                snap()
+                            }
+                        ),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
                 ) {
@@ -1494,15 +1577,31 @@ private fun DolphyUnifiedBottomBar(
                         contentDescription = item.title,
                         tint = contentColor,
                     )
-                    if (item.selected) {
-                        Spacer(Modifier.size(8.dp))
-                        Text(
-                            text = item.title,
-                            color = contentColor,
-                            style = MaterialTheme.typography.labelLarge,
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                        )
+                    AnimatedVisibility(
+                        visible = item.selected,
+                        enter = if (animationsEnabled) {
+                            fadeIn(animationSpec = tween(120)) +
+                                expandHorizontally(animationSpec = tween(180, easing = FastOutSlowInEasing))
+                        } else {
+                            EnterTransition.None
+                        },
+                        exit = if (animationsEnabled) {
+                            fadeOut(animationSpec = tween(100)) +
+                                shrinkHorizontally(animationSpec = tween(140))
+                        } else {
+                            ExitTransition.None
+                        },
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Spacer(Modifier.size(8.dp))
+                            Text(
+                                text = item.title,
+                                color = contentColor,
+                                style = MaterialTheme.typography.labelLarge,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            )
+                        }
                     }
                 }
             }
@@ -1552,6 +1651,10 @@ private fun LiquidGlassBottomNavigation(
     onBluetoothClick: () -> Unit,
     onOtherClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    fabIcon: ImageVector,
+    fabTitle: String,
+    onFabClick: () -> Unit,
+    fabEnabled: Boolean,
 ) {
     val selectedTabIndex = when {
         bluetoothSelected -> 0
@@ -1559,49 +1662,103 @@ private fun LiquidGlassBottomNavigation(
         settingsSelected -> 2
         else -> 0
     }
-    val iconTint = MaterialTheme.colorScheme.primary
 
-    LiquidBottomTabs(
-        selectedTabIndex = { selectedTabIndex },
-        onTabSelected = { index ->
-            when (index) {
-                0 -> onBluetoothClick()
-                1 -> onOtherClick()
-                2 -> onSettingsClick()
-            }
-        },
-        backdrop = backdrop,
-        tabsCount = 3,
-        barHeight = 64.dp,
+    Column(
         modifier = Modifier
+            .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 48.dp, vertical = 12.dp)
-            .fillMaxWidth(),
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        LiquidBottomTab(onClick = onBluetoothClick) {
-            Icon(
-                imageVector = Icons.Default.Bluetooth,
-                contentDescription = "Bluetooth",
-                tint = iconTint,
-                modifier = Modifier.size(26.dp),
-            )
+        Row(
+            modifier = Modifier
+                .widthIn(max = 480.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            LiquidBottomTabs(
+                selectedTabIndex = { selectedTabIndex },
+                onTabSelected = { index ->
+                    when (index) {
+                        0 -> onBluetoothClick()
+                        1 -> onOtherClick()
+                        2 -> onSettingsClick()
+                    }
+                },
+                backdrop = backdrop,
+                tabsCount = 3,
+                barHeight = 64.dp,
+                modifier = Modifier.weight(1f),
+            ) {
+                LiquidBottomTab(onClick = onBluetoothClick) {
+                    LiquidNavigationLabel(
+                        title = stringResource(R.string.nav_bluetooth),
+                        icon = Icons.Default.Bluetooth,
+                        selected = bluetoothSelected,
+                    )
+                }
+                LiquidBottomTab(onClick = onOtherClick) {
+                    LiquidNavigationLabel(
+                        title = stringResource(R.string.nav_modules),
+                        icon = Icons.Default.Extension,
+                        selected = otherSelected,
+                    )
+                }
+                LiquidBottomTab(onClick = onSettingsClick) {
+                    LiquidNavigationLabel(
+                        title = stringResource(R.string.nav_settings),
+                        icon = Icons.Default.Settings,
+                        selected = settingsSelected,
+                    )
+                }
+            }
+            if (fabEnabled) {
+                Spacer(Modifier.width(8.dp))
+                FloatingActionButton(
+                    onClick = onFabClick,
+                    modifier = Modifier.size(56.dp),
+                    shape = CircleShape,
+                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.88f),
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ) {
+                    Icon(imageVector = fabIcon, contentDescription = fabTitle)
+                }
+            }
         }
-        LiquidBottomTab(onClick = onOtherClick) {
-            Icon(
-                imageVector = Icons.Default.Extension,
-                contentDescription = "Lainnya",
-                tint = iconTint,
-                modifier = Modifier.size(26.dp),
-            )
-        }
-        LiquidBottomTab(onClick = onSettingsClick) {
-            Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = "Pengaturan",
-                tint = iconTint,
-                modifier = Modifier.size(26.dp),
-            )
-        }
+    }
+}
+
+@Composable
+private fun LiquidNavigationLabel(
+    title: String,
+    icon: ImageVector,
+    selected: Boolean,
+) {
+    val contentColor by animateColorAsState(
+        targetValue = if (selected) {
+            MaterialTheme.colorScheme.onPrimary
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        animationSpec = tween(durationMillis = 180),
+        label = "liquid_navigation_content",
+    )
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = title,
+            tint = contentColor,
+            modifier = Modifier.size(22.dp),
+        )
+        Text(
+            text = title,
+            color = contentColor,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+        )
     }
 }
 
@@ -1706,31 +1863,42 @@ private fun rootSectionExitTransition(
 }
 
 private fun cornerEnterTransition(): EnterTransition {
-    return slideInHorizontally(
-        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
-        initialOffsetX = { it }
-    ) + fadeIn(animationSpec = tween(durationMillis = 180))
+    return fadeIn(animationSpec = tween(durationMillis = 180)) +
+        slideInHorizontally(
+            animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+            initialOffsetX = { it / 8 },
+        ) +
+        scaleIn(
+            initialScale = 0.985f,
+            animationSpec = tween(durationMillis = 220, easing = LinearOutSlowInEasing),
+        )
 }
 
 private fun cornerExitTransition(): ExitTransition {
-    return slideOutHorizontally(
-        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-        targetOffsetX = { -it }
-    ) + fadeOut(animationSpec = tween(durationMillis = 120))
+    return fadeOut(animationSpec = tween(durationMillis = 120)) +
+        slideOutHorizontally(
+            animationSpec = tween(durationMillis = 160, easing = FastOutSlowInEasing),
+            targetOffsetX = { -it / 12 },
+        ) +
+        scaleOut(targetScale = 0.99f, animationSpec = tween(durationMillis = 160))
 }
 
 private fun cornerPopEnterTransition(): EnterTransition {
-    return slideInHorizontally(
-        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
-        initialOffsetX = { -it }
-    ) + fadeIn(animationSpec = tween(durationMillis = 160))
+    return fadeIn(animationSpec = tween(durationMillis = 160)) +
+        slideInHorizontally(
+            animationSpec = tween(durationMillis = 210, easing = FastOutSlowInEasing),
+            initialOffsetX = { -it / 8 },
+        ) +
+        scaleIn(initialScale = 0.985f, animationSpec = tween(durationMillis = 210))
 }
 
 private fun cornerPopExitTransition(): ExitTransition {
-    return slideOutHorizontally(
-        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-        targetOffsetX = { it }
-    ) + fadeOut(animationSpec = tween(durationMillis = 120))
+    return fadeOut(animationSpec = tween(durationMillis = 120)) +
+        slideOutHorizontally(
+            animationSpec = tween(durationMillis = 160, easing = FastOutSlowInEasing),
+            targetOffsetX = { it / 12 },
+        ) +
+        scaleOut(targetScale = 0.99f, animationSpec = tween(durationMillis = 160))
 }
 
 private fun expressiveEnterTransition(): EnterTransition {
@@ -3158,7 +3326,7 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                     val functionsMenuViewType by spamViewModel.functionsMenuViewType.collectAsState()
                     val functionsTileSize by spamViewModel.functionsTileSize.collectAsState()
                     val appStyleMode by spamViewModel.appStyleMode.collectAsState()
-                    val interfaceItems = 5 + 1 + 1 + (if (functionsMenuViewType == 1) 1 else 0) + (if (liquidGlassEnabled) 1 else 0)
+                    val interfaceItems = 5 + 1 + 1 + (if (functionsMenuViewType == 1) 1 else 0) + 1
 
                     MaterialCard(
                         modifier = Modifier.fillMaxWidth(),
@@ -3493,7 +3661,6 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                         }
                     }
 
-                    if (liquidGlassEnabled) {
                     val liquidGlassButtonsPref by spamViewModel.liquidGlassButtons.collectAsState()
                     val liquidGlassTopBarsPref by spamViewModel.liquidGlassTopBars.collectAsState()
                     val liquidGlassNavPref by spamViewModel.liquidGlassNav.collectAsState()
@@ -3611,7 +3778,6 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                                 }
                             }
                         }
-                    }
                     }
                 }
             }
@@ -5806,7 +5972,7 @@ class SpamViewModel(private val application: Application) : AndroidViewModel(app
     val flipperFontScale: StateFlow<Float> = _flipperFontScale
     private val _uiScale = MutableStateFlow(prefs.getFloat("ui_scale", 0.9f).coerceIn(0.8f, 1.2f))
     val uiScale: StateFlow<Float> = _uiScale
-    private val _liquidGlassEnabled = MutableStateFlow(false)
+    private val _liquidGlassEnabled = MutableStateFlow(prefs.getBoolean("liquid_glass_enabled", false))
     val liquidGlassEnabled: StateFlow<Boolean> = _liquidGlassEnabled
     private val _liquidGlassButtons = MutableStateFlow(prefs.getBoolean("liquid_glass_buttons", true))
     val liquidGlassButtons: StateFlow<Boolean> = _liquidGlassButtons
@@ -6010,8 +6176,8 @@ class SpamViewModel(private val application: Application) : AndroidViewModel(app
     }
 
     fun setLiquidGlassEnabled(enabled: Boolean) {
-        prefs.edit { putBoolean("liquid_glass_enabled", false) }
-        _liquidGlassEnabled.value = false
+        prefs.edit { putBoolean("liquid_glass_enabled", enabled) }
+        _liquidGlassEnabled.value = enabled
     }
 
     fun setLiquidGlassButtons(enabled: Boolean) {
