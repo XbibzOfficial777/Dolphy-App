@@ -32,7 +32,7 @@ internal fun copyNormalizedWordlist(reader: BufferedReader, writer: Writer): Nor
         if (count >= MAX_WORDLIST_ENTRIES) throw IOException("Wordlist melebihi 20 juta entri")
         writer.append(password).append('\n')
         count++
-        if (password.length >= 8) validCount++
+        if (isSupportedWpaPassphrase(password)) validCount++
     }
     return NormalizedWordlistStats(count, validCount)
 }
@@ -56,7 +56,9 @@ internal fun uniqueWordlistName(baseName: String, existingNames: Collection<Stri
 
 internal fun normalizeWordlistLine(line: String): String? {
     require(!line.contains('\u0000')) { "Wordlist mengandung karakter NUL" }
-    return line.trim().takeIf { it.isNotEmpty() }
+    // readLine() already removes line endings. Every other character, including
+    // leading/trailing spaces, can be part of a WPA passphrase and must survive.
+    return line.takeIf { it.isNotEmpty() }
 }
 
 internal fun isValidWordlistFileName(fileName: String): Boolean {
