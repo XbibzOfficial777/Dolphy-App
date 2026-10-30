@@ -1,5 +1,6 @@
 package com.droid.dolphy
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateDpAsState
@@ -10,8 +11,10 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -20,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +32,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -85,6 +90,7 @@ fun DolphySwitch(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DolphySlider(
     value: Float,
@@ -97,16 +103,100 @@ fun DolphySlider(
     colors: androidx.compose.material3.SliderColors = SliderDefaults.colors(),
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
 ) {
+    val isDragged by interactionSource.collectIsDraggedAsState()
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val reducedMotion = LocalReducedMotionEnabled.current
+
     Slider(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier,
+        modifier = modifier.height(LiquidSizing.TouchTarget),
         enabled = enabled,
         valueRange = valueRange,
         steps = steps,
         onValueChangeFinished = onValueChangeFinished,
         colors = colors,
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
+        thumb = { Spacer(Modifier.size(0.dp)) },
+        track = { sliderState ->
+            val targetFraction = normalizedSliderFraction(
+                value = sliderState.value,
+                start = sliderState.valueRange.start,
+                endInclusive = sliderState.valueRange.endInclusive,
+            )
+            val animatedFraction = remember { Animatable(targetFraction) }
+            LaunchedEffect(targetFraction, isDragged, reducedMotion) {
+                if (isDragged || reducedMotion) {
+                    animatedFraction.snapTo(targetFraction)
+                } else {
+                    animatedFraction.animateTo(
+                        targetValue = targetFraction,
+                        animationSpec = spring(dampingRatio = 0.86f, stiffness = 620f),
+                    )
+                }
+            }
+            val expand by animateFloatAsState(
+                targetValue = if ((isDragged || isPressed) && !reducedMotion) 1f else 0f,
+                animationSpec = if (reducedMotion) {
+                    tween(durationMillis = 0)
+                } else {
+                    spring(dampingRatio = 0.74f, stiffness = 520f)
+                },
+                label = "dolphy_slider_expand",
+            )
+            val activeTrackColor = if (enabled) colors.activeTrackColor else colors.disabledActiveTrackColor
+            val inactiveTrackColor = if (enabled) colors.inactiveTrackColor else colors.disabledInactiveTrackColor
+            val thumbColor = if (enabled) colors.thumbColor else colors.disabledThumbColor
+            val activeTickColor = if (enabled) colors.activeTickColor else colors.disabledActiveTickColor
+            val inactiveTickColor = if (enabled) colors.inactiveTickColor else colors.disabledInactiveTickColor
+
+            Canvas(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(28.dp)
+            ) {
+                val open = expand
+                val trackHeight = sliderTrackThicknessDp(open).dp.toPx()
+                val thumbRadius = sliderThumbRadiusDp(open).dp.toPx()
+                val edge = maxOf(trackHeight / 2f, thumbRadius)
+                val usableWidth = size.width - edge * 2f
+                if (usableWidth <= 0f) return@Canvas
+
+                val y = size.height / 2f
+                val fraction = animatedFraction.value.coerceIn(0f, 1f)
+                val thumbX = edge + usableWidth * fraction
+
+                drawLine(
+                    color = inactiveTrackColor,
+                    start = Offset(edge, y),
+                    end = Offset(size.width - edge, y),
+                    strokeWidth = trackHeight,
+                    cap = StrokeCap.Round,
+                )
+                drawLine(
+                    color = activeTrackColor,
+                    start = Offset(edge, y),
+                    end = Offset(thumbX, y),
+                    strokeWidth = trackHeight,
+                    cap = StrokeCap.Round,
+                )
+
+                repeat(sliderState.steps.coerceAtLeast(0)) { index ->
+                    val tickFraction = (index + 1f) / (sliderState.steps + 1f)
+                    val tickX = edge + usableWidth * tickFraction
+                    drawCircle(
+                        color = if (tickFraction <= fraction) activeTickColor else inactiveTickColor,
+                        center = Offset(tickX, y),
+                        radius = 1.5.dp.toPx(),
+                    )
+                }
+                drawCircle(
+                    color = thumbColor,
+                    center = Offset(thumbX, y),
+                    radius = thumbRadius,
+                )
+            }
+        },
     )
 }
 
@@ -174,74 +264,6 @@ private fun ExpressiveSwitch(
             )
         }
     )
-}
-
-@Composable
-private fun ExpressiveSlider(
-    value: Float,
-    onValueChange: (Float) -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-    steps: Int = 0,
-    onValueChangeFinished: (() -> Unit)? = null
-) {
-    BoxWithConstraints(modifier = modifier) {
-        val colorScheme = MaterialTheme.colorScheme
-        val phase = rememberInfiniteTransition(label = "wave").animateFloat(
-            initialValue = 0f,
-            targetValue = 2f * PI.toFloat(),
-            animationSpec = infiniteRepeatable(
-                animation = tween(1600, easing = FastOutSlowInEasing)
-            ),
-            label = "wave_phase"
-        )
-        val trackHeight = 10.dp
-        val amplitude = 4.dp
-
-        Canvas(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(32.dp)
-        ) {
-            val w = size.width
-            val h = size.height / 2f
-            val ampPx = amplitude.toPx()
-            val pathInactive = Path()
-            val pathActive = Path()
-            val progress = ((value - valueRange.start) / (valueRange.endInclusive - valueRange.start)).coerceIn(0f, 1f)
-            val activeW = w * progress
-
-            val step = 6f
-            var x = 0f
-            while (x <= w) {
-            val y = h + (sin((x / w) * 2f * PI.toFloat() + phase.value).toFloat() * ampPx)
-                if (x == 0f) pathInactive.moveTo(x, y) else pathInactive.lineTo(x, y)
-                if (x <= activeW) {
-                    if (x == 0f) pathActive.moveTo(x, y) else pathActive.lineTo(x, y)
-                }
-                x += step
-            }
-
-            drawPath(pathInactive, color = colorScheme.outlineVariant, style = Stroke(width = trackHeight.toPx(), cap = StrokeCap.Round))
-            drawPath(pathActive, color = colorScheme.primary, style = Stroke(width = trackHeight.toPx(), cap = StrokeCap.Round))
-        }
-
-        Slider(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = enabled,
-            valueRange = valueRange,
-            steps = steps,
-            onValueChangeFinished = onValueChangeFinished,
-            colors = SliderDefaults.colors(
-                activeTrackColor = Color.Transparent,
-                inactiveTrackColor = Color.Transparent,
-                thumbColor = colorScheme.primaryContainer
-            )
-        )
-    }
 }
 
 @Composable

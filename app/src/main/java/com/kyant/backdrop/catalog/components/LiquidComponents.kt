@@ -24,7 +24,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -47,6 +46,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.droid.dolphy.DolphySlider
 import com.droid.dolphy.LiquidGlassVariant
 import com.droid.dolphy.LiquidMotion
 import com.droid.dolphy.LiquidRadius
@@ -319,7 +319,7 @@ fun LiquidSlider(
     modifier: Modifier = Modifier,
     accentColor: Color = MaterialTheme.colorScheme.primary,
 ) {
-    Slider(
+    DolphySlider(
         value = value(),
         onValueChange = onValueChange,
         valueRange = valueRange,
