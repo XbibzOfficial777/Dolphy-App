@@ -63,6 +63,7 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Wifi
@@ -96,10 +97,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -242,6 +245,7 @@ private class PasswordGroup(
 fun NetworkDiagnosticHubScreen(navController: NavController) {
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
+    val clipboardManager = LocalClipboardManager.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val wifiManager = remember {
         context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
@@ -314,6 +318,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
     var bruteForceSuccess by remember { mutableStateOf(false) }
     var bruteForceNeedsUserAction by remember { mutableStateOf(false) }
     var foundPassword by remember { mutableStateOf("") }
+    var passwordCopied by remember { mutableStateOf(false) }
 
     var currentBrutePassword by remember { mutableStateOf("") }
     var showPasswordDialog by remember { mutableStateOf(false) }
@@ -1030,6 +1035,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
         bruteForceSuccess = false
         bruteForceNeedsUserAction = false
         foundPassword = ""
+        passwordCopied = false
         currentBrutePassword = ""
         val selectedGroups = passwordGroups.filter { it.selected }
         val totalCandidates = selectedGroups.sumOf { it.validCount.toLong() }
@@ -1186,6 +1192,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
         bruteForceSuccess = false
         bruteForceNeedsUserAction = false
         foundPassword = ""
+        passwordCopied = false
         selectedTargetLabel = ""
         lanHosts.clear()
         lanScanning = false
@@ -1771,6 +1778,27 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                                                 textAlign = TextAlign.Center
                                             )
                                         }
+                                    }
+                                    com.droid.dolphy.AccentButton(
+                                        onClick = {
+                                            clipboardManager.setText(AnnotatedString(foundPassword))
+                                            passwordCopied = true
+                                            haptics.performHapticFeedback(
+                                                androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress,
+                                            )
+                                        },
+                                        enabled = foundPassword.isNotEmpty(),
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.ContentCopy,
+                                            contentDescription = null,
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            text = if (passwordCopied) "Kata sandi tersalin" else "Salin kata sandi",
+                                            fontWeight = FontWeight.Bold,
+                                        )
                                     }
                                 }
                             } else {
