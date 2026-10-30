@@ -597,10 +597,13 @@ fun SettingsItem(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
-    val performanceMode = LocalPerformanceModeEnabled.current
+    val reducedMotion = LocalReducedMotionEnabled.current
     val pressScale by animateFloatAsState(
-        targetValue = if (pressed && onClick != null && !performanceMode) 0.985f else 1f,
-        animationSpec = spring(dampingRatio = 0.72f, stiffness = 700f),
+        targetValue = if (pressed && onClick != null && !reducedMotion) LiquidMotion.PressScale else 1f,
+        animationSpec = spring(
+            dampingRatio = LiquidMotion.SpringDamping,
+            stiffness = LiquidMotion.SpringStiffness,
+        ),
         label = "settings_item_press",
     )
 
@@ -611,6 +614,7 @@ fun SettingsItem(
                 scaleY = pressScale
             }
             .fillMaxWidth()
+            .heightIn(min = LiquidSizing.TouchTarget)
             .then(
                 if (onClick != null) {
                     Modifier.clickable(
@@ -739,24 +743,42 @@ fun MaterialCard(
     content: @Composable () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    val resolvedShape = shape ?: MaterialTheme.shapes.extraLarge
+    val resolvedShape = shape ?: RoundedCornerShape(cornerRadius)
+    val resolvedAccent = if (accentColor == Color.Unspecified) colorScheme.primary else accentColor
+    val glass = containerType == "glass" && LocalLiquidGlassEnabled.current
     val containerColor = when (containerType) {
         "primary" -> colorScheme.primaryContainer
         "secondary" -> colorScheme.secondaryContainer
         "tertiary" -> colorScheme.tertiaryContainer
         "low" -> colorScheme.surfaceContainerLow
         "highest" -> colorScheme.surfaceContainerHighest
-        else -> colorScheme.surfaceContainerHigh
+        "glass" -> colorScheme.surface
+        else -> colorScheme.surfaceContainer
     }
+    val cardBorder = if (glass) null else BorderStroke(
+        width = 1.dp,
+        color = if (accentColor == Color.Unspecified) {
+            colorScheme.outlineVariant.copy(alpha = 0.65f)
+        } else {
+            resolvedAccent.copy(alpha = 0.10f)
+        },
+    )
 
     Card(
-        modifier = modifier,
+        modifier = if (glass) {
+            modifier.liquidGlassSurface(
+                shape = resolvedShape,
+                tint = colorScheme.surface,
+                variant = LiquidGlassVariant.Secondary,
+            )
+        } else modifier,
         shape = resolvedShape,
         colors = CardDefaults.cardColors(
-            containerColor = containerColor
+            containerColor = if (glass) Color.Transparent else containerColor
         ),
+        border = cardBorder,
         elevation = CardDefaults.cardElevation(
-            defaultElevation = elevation
+            defaultElevation = if (glass) 0.dp else elevation
         )
     ) {
         Box(modifier = Modifier.padding(contentPadding)) {
@@ -796,7 +818,7 @@ fun AccentButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    shape: Shape = MaterialTheme.shapes.extraLarge,
+    shape: Shape = RoundedCornerShape(LiquidRadius.Panel),
     colors: ButtonColors = ButtonDefaults.buttonColors(),
     elevation: ButtonElevation? = ButtonDefaults.buttonElevation(),
     border: BorderStroke? = null,
@@ -806,13 +828,12 @@ fun AccentButton(
 ) {
     val buttonInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
     val isPressed by buttonInteractionSource.collectIsPressedAsState()
-    val expressive = LocalExpressiveEnabled.current
-    val performanceMode = LocalPerformanceModeEnabled.current
+    val reducedMotion = LocalReducedMotionEnabled.current
     val pressScale by animateFloatAsState(
-        targetValue = if (isPressed && enabled && !performanceMode) 0.96f else 1f,
+        targetValue = if (isPressed && enabled && !reducedMotion) LiquidMotion.PressScale else 1f,
         animationSpec = spring(
-            dampingRatio = if (expressive) 0.68f else Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessHigh,
+            dampingRatio = LiquidMotion.SpringDamping,
+            stiffness = LiquidMotion.SpringStiffness,
         ),
         label = "accent_button_press",
     )
@@ -845,7 +866,9 @@ fun DolphyStateCard(
 ) {
     MaterialCard(
         modifier = modifier.fillMaxWidth(),
-        contentPadding = 24.dp,
+        containerType = "glass",
+        cornerRadius = LiquidRadius.LargeCard,
+        contentPadding = LiquidSpacing.Large,
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -974,9 +997,9 @@ fun RootBadge(
         Text(
             text = "root",
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-            color = Color.Black,
+            color = contrastingContentColor(accent),
             style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Black,
+            fontWeight = FontWeight.SemiBold,
         )
     }
 }
@@ -996,7 +1019,7 @@ fun MaterialBackground(
             .fillMaxSize()
             .background(colorScheme.background)
     ) {
-        if (animatedBackgroundEnabled) {
+        if (animatedBackgroundEnabled && !LocalReducedMotionEnabled.current) {
             MatrixIconField(
                 modifier = Modifier
                     .matchParentSize()
@@ -1804,15 +1827,14 @@ fun ExpressiveBounceButton(
         val interactionSource = remember { MutableInteractionSource() }
         val isPressed by interactionSource.collectIsPressedAsState()
 
+        val reducedMotion = LocalReducedMotionEnabled.current
         val cornerRadius by animateDpAsState(
-            targetValue = if (isPressed) 12.dp else 28.dp,
-            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+            targetValue = if (isPressed && !reducedMotion) 24.dp else 28.dp,
+            animationSpec = spring(
+                dampingRatio = LiquidMotion.SpringDamping,
+                stiffness = LiquidMotion.SpringStiffness,
+            ),
             label = "corner"
-        )
-
-        val scale by animateFloatAsState(
-            targetValue = if (isPressed) 0.94f else 1f,
-            label = "scale"
         )
 
         val contentColorFinal =
@@ -1823,9 +1845,7 @@ fun ExpressiveBounceButton(
 
         AccentButton(
             onClick = onClick,
-            modifier = modifier
-                .scale(scale)
-                .height(56.dp),
+            modifier = modifier.height(LiquidSizing.ButtonHeight),
             enabled = enabled,
             interactionSource = interactionSource,
             shape = buttonShape,
@@ -1994,14 +2014,26 @@ fun ExpressiveDialog(
     text: @Composable (() -> Unit)? = null,
     accentColor: Color = MaterialTheme.colorScheme.primary
 ) {
+    val dialogShape = RoundedCornerShape(LiquidRadius.MajorSurface)
+    val liquid = LocalLiquidGlassEnabled.current
     AlertDialog(
         onDismissRequest = onDismissRequest,
-        modifier = modifier,
-        shape = RoundedCornerShape(28.dp),
-        containerColor = MaterialTheme.colorScheme.surface,
+        modifier = if (liquid) {
+            modifier.liquidGlassSurface(
+                shape = dialogShape,
+                tint = MaterialTheme.colorScheme.surfaceContainerHigh,
+                variant = LiquidGlassVariant.Secondary,
+                containerAlpha = 0.94f,
+            )
+        } else modifier,
+        shape = dialogShape,
+        containerColor = if (liquid) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 0.dp,
+        titleContentColor = MaterialTheme.colorScheme.onSurface,
+        textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         title = {
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                ProvideTextStyle(MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black)) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
+                ProvideTextStyle(MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold)) {
                     title()
                 }
             }

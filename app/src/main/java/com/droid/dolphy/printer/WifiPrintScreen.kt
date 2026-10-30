@@ -1,5 +1,6 @@
 package com.droid.dolphy.printer
 
+import com.droid.dolphy.DolphyTextField
 import com.droid.dolphy.DolphyIconButton
 
 import android.content.Intent
@@ -459,7 +460,7 @@ private fun MediaMenu(media: List<String>, selected: String?, onSelect: (String)
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         SettingLabel(stringResource(R.string.wifi_print_paper))
         ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-            OutlinedTextField(
+            DolphyTextField(
                 value = mediaLabel(selected.orEmpty()),
                 onValueChange = {},
                 readOnly = true,
@@ -527,19 +528,19 @@ private fun ManualPrinterDialog(
         title = { Text(stringResource(R.string.wifi_print_manual_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(
+                DolphyTextField(
                     value = host,
                     onValueChange = { host = it },
                     label = { Text(stringResource(R.string.wifi_print_host)) },
                     singleLine = true,
                 )
-                OutlinedTextField(
+                DolphyTextField(
                     value = port,
                     onValueChange = { port = it.filter(Char::isDigit).take(5) },
                     label = { Text(stringResource(R.string.wifi_print_port)) },
                     singleLine = true,
                 )
-                OutlinedTextField(
+                DolphyTextField(
                     value = path,
                     onValueChange = { path = it },
                     label = { Text(stringResource(R.string.wifi_print_path)) },

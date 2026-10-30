@@ -1,5 +1,6 @@
 package com.droid.dolphy.hid
 
+import com.droid.dolphy.DolphyTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Column
@@ -142,7 +143,7 @@ internal fun PcConsumerControlsSection(hidConnection: Connection) {
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     item {
-                        OutlinedTextField(
+                        DolphyTextField(
                             value = textToSend,
                             onValueChange = { textToSend = it },
                             modifier = Modifier.fillMaxWidth(),
@@ -214,7 +215,7 @@ internal fun PcConsumerControlsSection(hidConnection: Connection) {
                     if (search.isBlank()) allActions else allActions.filter { it.label.contains(search, ignoreCase = true) }
                 }
                 Column(modifier = Modifier.fillMaxSize()) {
-                    OutlinedTextField(
+                    DolphyTextField(
                         value = search,
                         onValueChange = { search = it },
                         modifier = Modifier.fillMaxWidth(),

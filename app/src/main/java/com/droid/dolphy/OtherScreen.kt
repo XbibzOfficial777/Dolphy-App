@@ -1132,7 +1132,7 @@ private fun ModuleSearchField(
 ) {
     val focusManager = LocalFocusManager.current
     Column(modifier = modifier.fillMaxWidth()) {
-        OutlinedTextField(
+        DolphyTextField(
             value = query,
             onValueChange = { onQueryChange(it.take(80)) },
             modifier = Modifier.fillMaxWidth(),
@@ -1157,7 +1157,6 @@ private fun ModuleSearchField(
                 }
             },
             singleLine = true,
-            shape = RoundedCornerShape(24.dp),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
         )

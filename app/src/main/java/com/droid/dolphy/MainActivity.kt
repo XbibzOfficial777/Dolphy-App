@@ -123,8 +123,6 @@ import com.google.android.material.color.utilities.Hct
 import com.google.android.material.color.utilities.MaterialDynamicColors
 import com.google.android.material.color.utilities.SchemeTonalSpot
 import com.kyant.backdrop.Backdrop
-import com.kyant.backdrop.backdrops.layerBackdrop
-import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.backdrop.catalog.components.LiquidBottomTab
 import com.kyant.backdrop.catalog.components.LiquidBottomTabs
 import com.kyant.backdrop.catalog.components.LiquidButton
@@ -218,11 +216,37 @@ sealed class AdvertiseStartResult {
 }
 
 @Composable
+private fun rememberSystemAnimationsEnabled(): Boolean {
+    val context = LocalContext.current
+    val animationsEnabled = remember { mutableStateOf(android.animation.ValueAnimator.areAnimatorsEnabled()) }
+    DisposableEffect(context) {
+        val observer = object : android.database.ContentObserver(
+            android.os.Handler(android.os.Looper.getMainLooper())
+        ) {
+            override fun onChange(selfChange: Boolean) {
+                animationsEnabled.value = android.animation.ValueAnimator.areAnimatorsEnabled()
+            }
+        }
+        val uri = android.provider.Settings.Global.getUriFor(
+            android.provider.Settings.Global.ANIMATOR_DURATION_SCALE
+        )
+        runCatching {
+            context.contentResolver.registerContentObserver(uri, false, observer)
+            animationsEnabled.value = android.animation.ValueAnimator.areAnimatorsEnabled()
+        }
+        onDispose {
+            runCatching { context.contentResolver.unregisterContentObserver(observer) }
+        }
+    }
+    return animationsEnabled.value
+}
+
+@Composable
 fun DolphyTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    accentColor: Color = OrangeAccent,
+    accentColor: Color = LiquidColors.Accent,
     isAdaptiveColor: Boolean = false,
-    useFlipperFont: Boolean = true,
+    useFlipperFont: Boolean = false,
     flipperFontScale: Float = 1.08f,
     uiScale: Float = 1f,
     animatedBackgroundEnabled: Boolean = false,
@@ -231,14 +255,20 @@ fun DolphyTheme(
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
+    val systemAnimationsEnabled = rememberSystemAnimationsEnabled()
+    val reducedMotionEnabled = performanceModeEnabled || !systemAnimationsEnabled
+    val effectiveExpressiveEnabled = expressiveEnabled && !reducedMotionEnabled
 
-    val expressiveScheme = if (isAdaptiveColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    val baseScheme = if (isAdaptiveColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     } else remember(accentColor, darkTheme) {
         googleExpressiveColorScheme(accentColor, darkTheme)
     }
+    val expressiveScheme = remember(baseScheme, darkTheme, accentColor, isAdaptiveColor) {
+        withLiquidNeutralPalette(baseScheme, darkTheme, accentColor, isAdaptiveColor)
+    }
 
-    val typography = if (expressiveEnabled) {
+    val typography = if (effectiveExpressiveEnabled) {
         buildExpressiveTypography(useFlipperFont = useFlipperFont, fontScale = flipperFontScale)
     } else {
         buildAppTypography(useFlipperFont = useFlipperFont, fontScale = flipperFontScale)
@@ -251,9 +281,10 @@ fun DolphyTheme(
     }
 
     androidx.compose.runtime.CompositionLocalProvider(
-        LocalExpressiveEnabled provides expressiveEnabled,
-        LocalAnimatedBackgroundEnabled provides animatedBackgroundEnabled,
+        LocalExpressiveEnabled provides effectiveExpressiveEnabled,
+        LocalAnimatedBackgroundEnabled provides animatedBackgroundEnabled && !reducedMotionEnabled,
         LocalPerformanceModeEnabled provides performanceModeEnabled,
+        LocalReducedMotionEnabled provides reducedMotionEnabled,
         LocalDensity provides scaledDensity,
     ) {
         MaterialExpressiveTheme(
@@ -263,6 +294,41 @@ fun DolphyTheme(
             content = content
         )
     }
+}
+
+private fun withLiquidNeutralPalette(
+    base: ColorScheme,
+    darkTheme: Boolean,
+    seedColor: Color,
+    adaptiveColor: Boolean,
+): ColorScheme {
+    val primary = if (adaptiveColor) base.primary else seedColor
+    val onPrimary = if (adaptiveColor) base.onPrimary else contrastingContentColor(seedColor)
+    return base.copy(
+        primary = primary,
+        onPrimary = onPrimary,
+        secondary = if (adaptiveColor) base.secondary else LiquidColors.AccentSecondary,
+        onSecondary = if (adaptiveColor) base.onSecondary else contrastingContentColor(LiquidColors.AccentSecondary),
+        surfaceTint = primary,
+        background = if (darkTheme) LiquidColors.Background else LiquidColors.LightBackground,
+        onBackground = if (darkTheme) LiquidColors.TextPrimary else LiquidColors.LightTextPrimary,
+        surface = if (darkTheme) LiquidColors.Surface else LiquidColors.LightSurface,
+        onSurface = if (darkTheme) LiquidColors.TextPrimary else LiquidColors.LightTextPrimary,
+        surfaceVariant = if (darkTheme) LiquidColors.ElevatedSurface else LiquidColors.LightElevatedSurface,
+        onSurfaceVariant = if (darkTheme) LiquidColors.TextSecondary else LiquidColors.LightTextSecondary,
+        surfaceBright = if (darkTheme) Color(0xFF34383F) else LiquidColors.LightSurface,
+        surfaceDim = if (darkTheme) LiquidColors.Background else LiquidColors.LightElevatedSurface,
+        surfaceContainerLowest = if (darkTheme) LiquidColors.Background else LiquidColors.LightSurface,
+        surfaceContainerLow = if (darkTheme) LiquidColors.Surface else Color(0xFFF4F2EF),
+        surfaceContainer = if (darkTheme) LiquidColors.ElevatedSurface else LiquidColors.LightElevatedSurface,
+        surfaceContainerHigh = if (darkTheme) LiquidColors.ElevatedSurfaceHigh else Color(0xFFEAE7E3),
+        surfaceContainerHighest = if (darkTheme) Color(0xFF30343B) else Color(0xFFE4E0DC),
+        outline = if (darkTheme) Color(0xFF484B54) else Color(0xFFC9C5C0),
+        outlineVariant = if (darkTheme) Color(0xFF30333A) else Color(0xFFE1DEDA),
+        error = LiquidColors.Error,
+        onError = contrastingContentColor(LiquidColors.Error),
+        scrim = Color.Black,
+    )
 }
 
 private fun googleExpressiveColorScheme(seedColor: Color, darkTheme: Boolean): ColorScheme {
@@ -734,7 +800,7 @@ fun MainScreen(
 ) {
     val navController = rememberNavController()
     val expressiveEnabled by spamViewModel.expressiveEnabled.collectAsState()
-    val performanceModeEnabled by spamViewModel.performanceModeEnabled.collectAsState()
+    val reducedMotion = LocalReducedMotionEnabled.current
     val lastSeenVersion by spamViewModel.lastSeenVersion.collectAsState()
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
@@ -777,28 +843,28 @@ fun MainScreen(
         startDestination = "main_scaffold",
         enterTransition = {
             when {
-                performanceModeEnabled -> EnterTransition.None
+                reducedMotion -> EnterTransition.None
                 expressiveEnabled -> expressiveEnterTransition()
                 else -> cornerEnterTransition()
             }
         },
         exitTransition = {
             when {
-                performanceModeEnabled -> ExitTransition.None
+                reducedMotion -> ExitTransition.None
                 expressiveEnabled -> expressiveExitTransition()
                 else -> cornerExitTransition()
             }
         },
         popEnterTransition = {
             when {
-                performanceModeEnabled -> EnterTransition.None
+                reducedMotion -> EnterTransition.None
                 expressiveEnabled -> expressivePopEnterTransition()
                 else -> cornerPopEnterTransition()
             }
         },
         popExitTransition = {
             when {
-                performanceModeEnabled -> ExitTransition.None
+                reducedMotion -> ExitTransition.None
                 expressiveEnabled -> expressivePopExitTransition()
                 else -> cornerPopExitTransition()
             }
@@ -832,6 +898,7 @@ fun MainScaffold(
     val accentColor = MaterialTheme.colorScheme.primary
     val animatedBackgroundEnabled by spamViewModel.animatedBackgroundEnabled.collectAsState()
     val performanceModeEnabled by spamViewModel.performanceModeEnabled.collectAsState()
+    val reducedMotion = LocalReducedMotionEnabled.current
     val expressiveEnabled by spamViewModel.expressiveEnabled.collectAsState()
     val liquidGlassPreference by spamViewModel.liquidGlassEnabled.collectAsState()
     val liquidGlassEnabled = liquidGlassPreference && !performanceModeEnabled
@@ -904,7 +971,6 @@ fun MainScaffold(
         }
     }
 
-    val contentBackdrop = rememberLayerBackdrop()
     val controlsBackdrop = remember(liquidGlassEnabled) {
         if (liquidGlassEnabled) com.kyant.backdrop.backdrops.emptyBackdrop() else null
     }
@@ -929,7 +995,7 @@ fun MainScaffold(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-        if (animatedBackgroundEnabled && !performanceModeEnabled) {
+        if (animatedBackgroundEnabled && !reducedMotion) {
             MatrixIconField(
                 modifier = Modifier
                     .matchParentSize()
@@ -955,7 +1021,7 @@ fun MainScaffold(
         ProgressiveBlurContent(
             modifier = Modifier.fillMaxSize(),
             topHeightPx = 0f,
-            bottomHeightPx = if (performanceModeEnabled) 0f else bottomBlurHeight,
+            bottomHeightPx = if (liquidGlassEnabled && liquidGlassNav) bottomBlurHeight else 0f,
             blurRadius = 18f
         ) {
         NavHost(
@@ -963,7 +1029,7 @@ fun MainScaffold(
             startDestination = if (appStyleMode == 1) "other" else "bluetooth",
             modifier = Modifier.fillMaxSize(),
             enterTransition = {
-                if (performanceModeEnabled) {
+                if (reducedMotion) {
                     EnterTransition.None
                 } else {
                     rootSectionEnterTransition(
@@ -973,7 +1039,7 @@ fun MainScaffold(
                 }
             },
             exitTransition = {
-                if (performanceModeEnabled) {
+                if (reducedMotion) {
                     ExitTransition.None
                 } else {
                     rootSectionExitTransition(
@@ -983,7 +1049,7 @@ fun MainScaffold(
                 }
             },
             popEnterTransition = {
-                if (performanceModeEnabled) {
+                if (reducedMotion) {
                     EnterTransition.None
                 } else {
                     rootSectionEnterTransition(
@@ -993,7 +1059,7 @@ fun MainScaffold(
                 }
             },
             popExitTransition = {
-                if (performanceModeEnabled) {
+                if (reducedMotion) {
                     ExitTransition.None
                 } else {
                     rootSectionExitTransition(
@@ -1345,7 +1411,7 @@ fun MainScaffold(
 
         AnimatedVisibility(
             visible = appStyleMode != 1,
-            enter = if (performanceModeEnabled) {
+            enter = if (reducedMotion) {
                 EnterTransition.None
             } else {
                 slideInVertically(
@@ -1353,7 +1419,7 @@ fun MainScaffold(
                     initialOffsetY = { it / 3 },
                 ) + fadeIn(animationSpec = tween(160))
             },
-            exit = if (performanceModeEnabled) {
+            exit = if (reducedMotion) {
                 ExitTransition.None
             } else {
                 slideOutVertically(
@@ -1691,7 +1757,8 @@ private fun LiquidGlassBottomNavigation(
                 },
                 backdrop = backdrop,
                 tabsCount = 3,
-                barHeight = 64.dp,
+                barHeight = LiquidSizing.NavigationHeight,
+                motionEnabled = !LocalReducedMotionEnabled.current,
                 modifier = Modifier.weight(1f),
             ) {
                 LiquidBottomTab(onClick = onBluetoothClick) {
@@ -1738,18 +1805,22 @@ private fun LiquidNavigationLabel(
     icon: ImageVector,
     selected: Boolean,
 ) {
+    val reducedMotion = LocalReducedMotionEnabled.current
     val contentColor by animateColorAsState(
         targetValue = if (selected) {
             MaterialTheme.colorScheme.onPrimary
         } else {
             MaterialTheme.colorScheme.onSurfaceVariant
         },
-        animationSpec = tween(durationMillis = 180),
+        animationSpec = tween(durationMillis = if (reducedMotion) 0 else LiquidMotion.IconMillis),
         label = "liquid_navigation_content",
     )
     val selectionScale by animateFloatAsState(
-        targetValue = if (selected) 1.10f else 1f,
-        animationSpec = spring(dampingRatio = 0.64f, stiffness = 520f),
+        targetValue = if (selected && !reducedMotion) LiquidMotion.SelectedIconScale else 1f,
+        animationSpec = spring(
+            dampingRatio = LiquidMotion.SpringDamping,
+            stiffness = LiquidMotion.SpringStiffness,
+        ),
         label = "liquid_navigation_icon_scale",
     )
     Column(
@@ -1761,7 +1832,7 @@ private fun LiquidNavigationLabel(
             contentDescription = title,
             tint = contentColor,
             modifier = Modifier
-                .size(22.dp)
+                .size(LiquidSizing.NavigationIcon)
                 .graphicsLayer {
                     scaleX = selectionScale
                     scaleY = selectionScale
@@ -1771,7 +1842,7 @@ private fun LiquidNavigationLabel(
             text = title,
             color = contentColor,
             style = MaterialTheme.typography.labelSmall,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
             maxLines = 1,
         )
     }
@@ -1856,12 +1927,12 @@ private fun rootSectionEnterTransition(
     val targetIndex = rootSectionIndex(targetRoute) ?: return null
     if (initialIndex == targetIndex) return null
 
-    return fadeIn(animationSpec = tween(durationMillis = 180, easing = LinearOutSlowInEasing)) +
+    return fadeIn(animationSpec = tween(durationMillis = LiquidMotion.StateMillis, easing = LinearOutSlowInEasing)) +
         slideInHorizontally(
-            animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+            animationSpec = tween(durationMillis = LiquidMotion.CardMillis, easing = FastOutSlowInEasing),
             initialOffsetX = { fullWidth ->
                 val dir = if (targetIndex > initialIndex) 1 else -1
-                dir * (fullWidth / 10)
+                dir * (fullWidth / 12)
             }
         )
 }
@@ -1874,79 +1945,60 @@ private fun rootSectionExitTransition(
     val targetIndex = rootSectionIndex(targetRoute) ?: return null
     if (initialIndex == targetIndex) return null
 
-    return fadeOut(animationSpec = tween(durationMillis = 130, easing = FastOutLinearInEasing))
+    return fadeOut(animationSpec = tween(durationMillis = 160, easing = FastOutLinearInEasing)) +
+        slideOutHorizontally(
+            animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+            targetOffsetX = { fullWidth ->
+                val dir = if (targetIndex > initialIndex) 1 else -1
+                -dir * (fullWidth / 16)
+            },
+        )
 }
 
 private fun cornerEnterTransition(): EnterTransition {
-    return fadeIn(animationSpec = tween(durationMillis = 180)) +
+    return fadeIn(animationSpec = tween(durationMillis = LiquidMotion.StateMillis)) +
         slideInHorizontally(
-            animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-            initialOffsetX = { it / 8 },
+            animationSpec = tween(durationMillis = LiquidMotion.ScreenMillis, easing = FastOutSlowInEasing),
+            initialOffsetX = { it / 10 },
         ) +
         scaleIn(
-            initialScale = 0.985f,
-            animationSpec = tween(durationMillis = 220, easing = LinearOutSlowInEasing),
+            initialScale = 0.99f,
+            animationSpec = tween(durationMillis = LiquidMotion.CardMillis, easing = LinearOutSlowInEasing),
         )
 }
 
 private fun cornerExitTransition(): ExitTransition {
-    return fadeOut(animationSpec = tween(durationMillis = 120)) +
+    return fadeOut(animationSpec = tween(durationMillis = 160)) +
         slideOutHorizontally(
-            animationSpec = tween(durationMillis = 160, easing = FastOutSlowInEasing),
-            targetOffsetX = { -it / 12 },
-        ) +
-        scaleOut(targetScale = 0.99f, animationSpec = tween(durationMillis = 160))
-}
-
-private fun cornerPopEnterTransition(): EnterTransition {
-    return fadeIn(animationSpec = tween(durationMillis = 160)) +
-        slideInHorizontally(
-            animationSpec = tween(durationMillis = 210, easing = FastOutSlowInEasing),
-            initialOffsetX = { -it / 8 },
-        ) +
-        scaleIn(initialScale = 0.985f, animationSpec = tween(durationMillis = 210))
-}
-
-private fun cornerPopExitTransition(): ExitTransition {
-    return fadeOut(animationSpec = tween(durationMillis = 120)) +
-        slideOutHorizontally(
-            animationSpec = tween(durationMillis = 160, easing = FastOutSlowInEasing),
-            targetOffsetX = { it / 12 },
-        ) +
-        scaleOut(targetScale = 0.99f, animationSpec = tween(durationMillis = 160))
-}
-
-private fun expressiveEnterTransition(): EnterTransition {
-    return scaleIn(
-        initialScale = 0.92f,
-        animationSpec = spring(dampingRatio = 0.7f, stiffness = 420f)
-    ) + fadeIn(animationSpec = tween(durationMillis = 160)) +
-        slideInVertically(
-            initialOffsetY = { it / 8 },
-            animationSpec = spring(dampingRatio = 0.8f, stiffness = 380f)
+            animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+            targetOffsetX = { -it / 16 },
         )
 }
 
-private fun expressiveExitTransition(): ExitTransition {
-    return scaleOut(
-        targetScale = 0.98f,
-        animationSpec = tween(durationMillis = 140, easing = FastOutSlowInEasing)
-    ) + fadeOut(animationSpec = tween(durationMillis = 120))
+private fun cornerPopEnterTransition(): EnterTransition {
+    return fadeIn(animationSpec = tween(durationMillis = LiquidMotion.StateMillis)) +
+        slideInHorizontally(
+            animationSpec = tween(durationMillis = LiquidMotion.ScreenMillis, easing = FastOutSlowInEasing),
+            initialOffsetX = { -it / 10 },
+        ) +
+        scaleIn(initialScale = 0.99f, animationSpec = tween(durationMillis = LiquidMotion.CardMillis))
 }
 
-private fun expressivePopEnterTransition(): EnterTransition {
-    return scaleIn(
-        initialScale = 0.96f,
-        animationSpec = spring(dampingRatio = 0.75f, stiffness = 420f)
-    ) + fadeIn(animationSpec = tween(durationMillis = 140))
+private fun cornerPopExitTransition(): ExitTransition {
+    return fadeOut(animationSpec = tween(durationMillis = 160)) +
+        slideOutHorizontally(
+            animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+            targetOffsetX = { it / 12 },
+        )
 }
 
-private fun expressivePopExitTransition(): ExitTransition {
-    return scaleOut(
-        targetScale = 0.94f,
-        animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing)
-    ) + fadeOut(animationSpec = tween(durationMillis = 100))
-}
+private fun expressiveEnterTransition(): EnterTransition = cornerEnterTransition()
+
+private fun expressiveExitTransition(): ExitTransition = cornerExitTransition()
+
+private fun expressivePopEnterTransition(): EnterTransition = cornerPopEnterTransition()
+
+private fun expressivePopExitTransition(): ExitTransition = cornerPopExitTransition()
 
 @Composable
 fun BluetoothContainerScreen(viewModel: SpamViewModel, navController: NavController) {
@@ -2373,29 +2425,26 @@ private fun AdvertiseAddDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                OutlinedTextField(
+                DolphyTextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text(stringResource(R.string.ble_label_name)) },
                     placeholder = { Text(stringResource(R.string.ble_placeholder_name)) },
-                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
+                DolphyTextField(
                     value = companyCode,
                     onValueChange = { companyCode = it },
                     label = { Text(stringResource(R.string.ble_label_company_code)) },
                     placeholder = { Text(stringResource(R.string.ble_placeholder_company_code)) },
-                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
+                DolphyTextField(
                     value = payload,
                     onValueChange = { payload = it },
                     label = { Text(stringResource(R.string.ble_label_hex_payload)) },
                     placeholder = { Text(stringResource(R.string.ble_placeholder_hex_payload)) },
                     minLines = 3,
-                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Row(
@@ -2412,12 +2461,11 @@ private fun AdvertiseAddDialog(
                     )
                     Text(stringResource(R.string.ble_randomize_mac))
                 }
-                OutlinedTextField(
+                DolphyTextField(
                     value = interval,
                     onValueChange = { interval = it.filter(Char::isDigit) },
                     label = { Text(stringResource(R.string.ble_label_spam_interval)) },
                     placeholder = { Text(stringResource(R.string.ble_placeholder_interval)) },
-                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -3469,7 +3517,7 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                     val isAdaptiveColor by spamViewModel.isAdaptiveColor.collectAsState()
                     val colorOptions = remember {
                         val base = listOf(
-                            SettingColorOption("Dolphy", OrangeAccent),
+                            SettingColorOption("Dolphy", LiquidColors.Accent),
                             SettingColorOption("Red", RedThemeAccent),
                             SettingColorOption("Green", GreenThemeAccent),
                             SettingColorOption("Purple", PurpleThemeAccent),
@@ -4287,7 +4335,7 @@ fun AccentColorScreen(viewModel: SpamViewModel, onNavigateBack: () -> Unit) {
 
     data class Theme(val name: String, val accent: Color, val gradientColors: List<Color>, val isAdaptive: Boolean = false)
     val baseThemes = listOf(
-        Theme("Dolphy", OrangeAccent, listOf(OrangeAccent, Color(0xFFFF6600), Color(0xFFFF3300))),
+        Theme("Dolphy", LiquidColors.Accent, listOf(LiquidColors.Accent, LiquidColors.AccentSecondary, LiquidColors.Background)),
         Theme("Red", RedThemeAccent, listOf(Color.Red, Color(0xFF990000), Color.Black)),
         Theme("Green", GreenThemeAccent, listOf(Color.Green, Color.Yellow, Color.Green)),
         Theme("Purple", PurpleThemeAccent, listOf(Color(0xFF8800FF), Color(0xFF4400FF), PurpleThemeAccent)),
@@ -4756,15 +4804,14 @@ fun AnimatedBleButton(
         val interactionSource = remember { MutableInteractionSource() }
         val isPressed by interactionSource.collectIsPressedAsState()
 
+        val reducedMotion = LocalReducedMotionEnabled.current
         val cornerRadius by animateDpAsState(
-            targetValue = if (isPressed) 14.dp else if (fullyRounded) 32.dp else 28.dp,
-            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+            targetValue = if (isPressed && !reducedMotion) 24.dp else if (fullyRounded) 32.dp else 28.dp,
+            animationSpec = spring(
+                dampingRatio = LiquidMotion.SpringDamping,
+                stiffness = LiquidMotion.SpringStiffness,
+            ),
             label = "corner"
-        )
-
-        val scale by animateFloatAsState(
-            targetValue = if (isPressed) 0.94f else 1f,
-            label = "scale"
         )
 
         val buttonShape = RoundedCornerShape(cornerRadius)
@@ -4781,7 +4828,7 @@ fun AnimatedBleButton(
                     vibrate(context)
                     onClick()
                 },
-                modifier = modifier.height(56.dp).scale(scale),
+                modifier = modifier.height(LiquidSizing.ButtonHeight),
                 shape = buttonShape,
                 interactionSource = interactionSource,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
@@ -4814,7 +4861,7 @@ fun AnimatedBleButton(
                     vibrate(context)
                     onClick()
                 },
-                modifier = modifier.height(56.dp).scale(scale),
+                modifier = modifier.height(LiquidSizing.ButtonHeight),
                 shape = buttonShape,
                 interactionSource = interactionSource,
                 colors = ButtonDefaults.buttonColors(containerColor = accent)
@@ -4943,12 +4990,11 @@ fun DolphyScreen(viewModel: DolphyViewModel, navController: NavController? = nul
             title = { Text(stringResource(R.string.passport_rename_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
+                    DolphyTextField(
                         value = renameInput,
                         onValueChange = { renameInput = it.replace("\n", "").take(25) },
                         singleLine = true,
                         label = { Text(stringResource(R.string.passport_name_label)) },
-                        shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
@@ -5975,19 +6021,19 @@ class SpamViewModel(private val application: Application) : AndroidViewModel(app
     private val _customBackgroundUri = MutableStateFlow<Uri?>(prefs.getString("custom_bg_uri", null)?.toUri())
     val customBackgroundUri: StateFlow<Uri?> = _customBackgroundUri
 
-    private val _accentColor = MutableStateFlow(Color(prefs.getInt("accent_color", OrangeAccent.toArgb())))
+    private val _accentColor = MutableStateFlow(Color(prefs.getInt("accent_color", LiquidColors.Accent.toArgb())))
     val accentColor: StateFlow<Color> = _accentColor
 
-    private val _isAdaptiveColor = MutableStateFlow(prefs.getBoolean("is_adaptive_color", true))
+    private val _isAdaptiveColor = MutableStateFlow(prefs.getBoolean("is_adaptive_color", false))
     val isAdaptiveColor: StateFlow<Boolean> = _isAdaptiveColor
 
     private val _flipperFontEnabled = MutableStateFlow(prefs.getBoolean("flipper_font_enabled", false))
     val flipperFontEnabled: StateFlow<Boolean> = _flipperFontEnabled
     private val _flipperFontScale = MutableStateFlow(prefs.getFloat("flipper_font_scale", 1.08f))
     val flipperFontScale: StateFlow<Float> = _flipperFontScale
-    private val _uiScale = MutableStateFlow(prefs.getFloat("ui_scale", 0.9f).coerceIn(0.8f, 1.2f))
+    private val _uiScale = MutableStateFlow(prefs.getFloat("ui_scale", 1.0f).coerceIn(0.8f, 1.2f))
     val uiScale: StateFlow<Float> = _uiScale
-    private val _liquidGlassEnabled = MutableStateFlow(prefs.getBoolean("liquid_glass_enabled", false))
+    private val _liquidGlassEnabled = MutableStateFlow(prefs.getBoolean("liquid_glass_enabled", true))
     val liquidGlassEnabled: StateFlow<Boolean> = _liquidGlassEnabled
     private val _liquidGlassButtons = MutableStateFlow(prefs.getBoolean("liquid_glass_buttons", true))
     val liquidGlassButtons: StateFlow<Boolean> = _liquidGlassButtons
@@ -6152,13 +6198,13 @@ class SpamViewModel(private val application: Application) : AndroidViewModel(app
                 val colorInt = context.resources.getColor(android.R.color.system_accent1_500, context.theme)
                 Color(colorInt)
             } else {
-                OrangeAccent
+                LiquidColors.Accent
             }
 
 
-            lerp(baseColor, OrangeAccent, 0.35f)
+            lerp(baseColor, LiquidColors.Accent, 0.35f)
         } catch (e: Exception) {
-            OrangeAccent
+            LiquidColors.Accent
         }
     }
 

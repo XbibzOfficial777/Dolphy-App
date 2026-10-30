@@ -1,16 +1,17 @@
 package com.droid.dolphy
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 
 
-val DarkBackground = Color(0xFF0F0E0D)
-val LightBackground = Color(0xFFF9F9F9)
-val BrighterSurface = Color(0xFF22201E)
+val DarkBackground = LiquidColors.Background
+val LightBackground = LiquidColors.LightBackground
+val BrighterSurface = LiquidColors.ElevatedSurface
 val OrangeAccent = Color(0xFFFF6600)
 val OrangeBorder = Color(0xFFFFCC80)
-val TextWhite = Color(0xFFFFFFFF)
-val TextGray = Color(0xFFCFD8DC)
-val GreenSuccess = Color(0xFFB9F6CA)
+val TextWhite = LiquidColors.TextPrimary
+val TextGray = LiquidColors.TextSecondary
+val GreenSuccess = LiquidColors.Success
 
 
 val RedThemeAccent = Color(0xFFFF5252)
@@ -47,13 +48,13 @@ val OrangeGradientEnd = Color(0xFFFFD600)
 val OrangeGradientDeep = Color(0xFFFF2200)
 
 
-val GradientDarkStart = Color(0xFF0D0D0D)
-val GradientDarkMiddle = Color(0xFF1A1A1A)
-val GradientDarkEnd = Color(0xFF2D2D2D)
+val GradientDarkStart = LiquidColors.Background
+val GradientDarkMiddle = LiquidColors.Surface
+val GradientDarkEnd = LiquidColors.ElevatedSurface
 
 
-val SurfaceVolumetricDark = Color(0xFF1E1E24)
-val SurfaceVolumetricLight = Color(0xFF2A2A32)
+val SurfaceVolumetricDark = LiquidColors.Surface
+val SurfaceVolumetricLight = LiquidColors.ElevatedSurface
 val SurfaceHighlight = Color(0xFF3A3A44)
 
 
@@ -70,13 +71,17 @@ val CardBorderDark = Color(0xFF3A3A3A)
 val CardBorderLight = Color(0xFF4A4A4A)
 
 
-val TextPrimary = Color(0xFFFFFFFF)
-val TextSecondary = Color(0xFFB0B0B0)
-val TextTertiary = Color(0xFF808080)
+val TextPrimary = LiquidColors.TextPrimary
+val TextSecondary = LiquidColors.TextSecondary
+val TextTertiary = LiquidColors.TextMuted
 
 fun contrastingContentColor(color: Color): Color {
-    val luminance = 0.299f * color.red + 0.587f * color.green + 0.114f * color.blue
-    return if (luminance > 0.56f) Color(0xFF18120D) else Color.White
+    val dark = Color(0xFF1C1C1F)
+    val light = Color(0xFFF5F5F7)
+    val backgroundLuminance = color.luminance()
+    val darkContrast = (backgroundLuminance + 0.05f) / (dark.luminance() + 0.05f)
+    val lightContrast = (light.luminance() + 0.05f) / (backgroundLuminance + 0.05f)
+    return if (darkContrast >= lightContrast) dark else light
 }
 
 
@@ -90,6 +95,11 @@ fun contrastingContentColor(color: Color): Color {
 
 fun getGradientColors(accentColor: Color): List<Color> {
     return when (accentColor) {
+        LiquidColors.Accent -> listOf(
+            LiquidColors.Accent,
+            LiquidColors.AccentSecondary,
+            LiquidColors.Accent.copy(alpha = 0.82f),
+        )
         OrangeAccent -> listOf(
             OrangeGradientStart,
             OrangeGradientMiddle,
@@ -128,6 +138,7 @@ fun getGradientColors(accentColor: Color): List<Color> {
 
 fun getGlowColor(accentColor: Color): Color {
     return when (accentColor) {
+        LiquidColors.Accent -> LiquidColors.Accent.copy(alpha = 0.20f)
         OrangeAccent -> OrangeGradientMiddle.copy(alpha = 0.4f)
         RedThemeAccent -> Color(0x60FF3333)
         GreenThemeAccent -> Color(0x6000DD44)
@@ -143,6 +154,12 @@ fun getGlowColor(accentColor: Color): Color {
 
 fun getSplashGradientColors(accentColor: Color): List<Color> {
     return when (accentColor) {
+        LiquidColors.Accent -> listOf(
+            LiquidColors.Background,
+            LiquidColors.Surface,
+            LiquidColors.ElevatedSurface,
+            LiquidColors.Background,
+        )
         OrangeAccent -> listOf(
             Color(0xFF1A0A00),
             Color(0xFF2D1200),

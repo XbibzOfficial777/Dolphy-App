@@ -1,9 +1,9 @@
 package com.droid.dolphy.network
 
+import com.droid.dolphy.LocalReducedMotionEnabled
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -385,13 +385,18 @@ fun CameraNetworkResultsScreen(navController: NavController) {
     val accent = MaterialTheme.colorScheme.primary
     val cameras = remember { CameraScanResultsStore.lastResults }
     val found = cameras.isNotEmpty()
-    val resultScale = remember { Animatable(0.55f) }
+    val reducedMotion = LocalReducedMotionEnabled.current
+    val resultScale = remember { Animatable(if (reducedMotion) 1f else 0.96f) }
 
-    LaunchedEffect(Unit) {
-        resultScale.animateTo(
-            1f,
-            spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
-        )
+    LaunchedEffect(reducedMotion) {
+        if (reducedMotion) {
+            resultScale.snapTo(1f)
+        } else {
+            resultScale.animateTo(
+                1f,
+                spring(dampingRatio = 0.80f, stiffness = 480f),
+            )
+        }
     }
 
     MaterialBackground(accentColor = accent) {

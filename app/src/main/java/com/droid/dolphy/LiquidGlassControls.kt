@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
@@ -41,11 +42,12 @@ fun DolphyIconButton(
         LiquidButton(
             onClick = onClick,
             backdrop = backdrop,
-            modifier = modifier.size(36.dp),
+            modifier = modifier.size(LiquidSizing.TouchTarget),
             tint = tint,
             surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             applyDefaultHeight = false,
             contentPaddingHorizontal = 0.dp,
+            motionEnabled = !LocalReducedMotionEnabled.current,
         ) {
             Box(
                 modifier = Modifier.fillMaxWidth(),
@@ -57,7 +59,7 @@ fun DolphyIconButton(
     } else {
         IconButton(
             onClick = onClick,
-            modifier = modifier.size(36.dp),
+            modifier = modifier.size(LiquidSizing.TouchTarget),
             enabled = enabled,
             content = content,
         )
@@ -82,6 +84,7 @@ fun DolphyButton(
             modifier = modifier,
             tint = if (tint != Color.Unspecified) tint else MaterialTheme.colorScheme.primary,
             surfaceColor = if (tint != Color.Unspecified) tint else MaterialTheme.colorScheme.primary,
+            motionEnabled = !LocalReducedMotionEnabled.current,
             content = content,
         )
     } else {
@@ -103,22 +106,12 @@ fun DolphyTextButton(
     enabled: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
-    if (isLiquidGlassChrome() && enabled) {
-        val backdrop = LocalLiquidGlassBackdrop.current!!
-        val primary = MaterialTheme.colorScheme.primary
-        LiquidButton(
-            onClick = onClick,
-            backdrop = backdrop,
-            modifier = modifier,
-            tint = primary,
-            surfaceColor = primary,
-            applyDefaultHeight = true,
-            contentPaddingHorizontal = 12.dp,
-            content = content,
-        )
-    } else {
-        AccentButton(onClick = onClick, modifier = modifier, enabled = enabled, content = content)
-    }
+    TextButton(
+        onClick = onClick,
+        modifier = modifier.heightIn(min = LiquidSizing.TouchTarget),
+        enabled = enabled,
+        content = content,
+    )
 }
 
 

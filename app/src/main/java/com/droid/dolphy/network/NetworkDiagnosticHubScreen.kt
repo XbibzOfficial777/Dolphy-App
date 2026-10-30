@@ -1,13 +1,16 @@
 package com.droid.dolphy.network
 
 import com.droid.dolphy.DolphyIconButton
+import com.droid.dolphy.LiquidGlassVariant
+import com.droid.dolphy.LocalLiquidGlassEnabled
+import com.droid.dolphy.LocalReducedMotionEnabled
+import com.droid.dolphy.liquidGlassSurface
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -2486,7 +2489,7 @@ private fun BrutePasswordDialog(
     onDismiss: () -> Unit,
     onSave: () -> Unit,
 ) {
-    val performanceMode = com.droid.dolphy.LocalPerformanceModeEnabled.current
+    val reducedMotion = LocalReducedMotionEnabled.current
     val dialogVisible = remember { MutableTransitionState(false) }
     LaunchedEffect(Unit) { dialogVisible.targetState = true }
 
@@ -2496,24 +2499,36 @@ private fun BrutePasswordDialog(
     ) {
         AnimatedVisibility(
             visibleState = dialogVisible,
-            enter = if (performanceMode) {
+            enter = if (reducedMotion) {
                 EnterTransition.None
             } else {
                 fadeIn(animationSpec = tween(150)) +
                     scaleIn(
-                        initialScale = 0.94f,
-                        animationSpec = spring(dampingRatio = 0.78f, stiffness = 480f),
+                        initialScale = 0.98f,
+                        animationSpec = tween(durationMillis = 260),
                     )
             },
             exit = ExitTransition.None,
         ) {
+        val dialogShape = RoundedCornerShape(28.dp)
+        val liquid = LocalLiquidGlassEnabled.current
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 700.dp),
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHighest,
-            tonalElevation = 8.dp
+                .heightIn(max = 700.dp)
+                .then(
+                    if (liquid) {
+                        Modifier.liquidGlassSurface(
+                            shape = dialogShape,
+                            tint = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            variant = LiquidGlassVariant.Secondary,
+                            containerAlpha = 0.94f,
+                        )
+                    } else Modifier
+                ),
+            shape = dialogShape,
+            color = if (liquid) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = 0.dp
         ) {
             Column(
                 modifier = Modifier
@@ -2524,7 +2539,7 @@ private fun BrutePasswordDialog(
                 Text(
                     text = stringResource(R.string.wifi_brute_force_passwords),
                     style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.fillMaxWidth(),
                 )
 
@@ -2553,7 +2568,7 @@ private fun BrutePasswordDialog(
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = if (isImporting) "Mengimpor wordlist…" else "Impor wordlist .txt",
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                     )
                 }
                 Text(
@@ -2564,7 +2579,7 @@ private fun BrutePasswordDialog(
                 AnimatedContent(
                     targetState = feedback,
                     transitionSpec = {
-                        if (performanceMode) {
+                        if (reducedMotion) {
                             EnterTransition.None togetherWith ExitTransition.None
                         } else {
                             (fadeIn(animationSpec = tween(150)) +
@@ -2632,7 +2647,7 @@ private fun BrutePasswordDialog(
                                         Text(
                                             text = group.name,
                                             style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
+                                            fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.onSurface,
                                         )
                                         Text(

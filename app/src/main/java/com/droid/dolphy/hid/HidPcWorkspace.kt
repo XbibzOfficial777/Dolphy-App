@@ -1,5 +1,6 @@
 package com.droid.dolphy.hid
 
+import com.droid.dolphy.DolphyTextField
 import com.droid.dolphy.DolphyIconButton
 
 import android.annotation.SuppressLint
@@ -873,7 +874,7 @@ private fun BadHidSection(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            OutlinedTextField(
+            DolphyTextField(
                 value = targetUrl,
                 onValueChange = onTargetUrlChange,
                 modifier = Modifier.weight(1f),
@@ -898,7 +899,7 @@ private fun BadHidSection(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            OutlinedTextField(
+            DolphyTextField(
                 value = noteText,
                 onValueChange = onNoteTextChange,
                 modifier = Modifier.weight(1f),

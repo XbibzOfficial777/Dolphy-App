@@ -1,5 +1,6 @@
 package com.droid.dolphy.nfc.ui
 
+import com.droid.dolphy.DolphyTextField
 import com.droid.dolphy.DolphyIconButton
 
 import android.app.Activity
@@ -182,14 +183,14 @@ fun NfcTagEmulationListScreen(navController: NavController) {
             title = { Text(stringResource(R.string.nfc_new_tag)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
+                    DolphyTextField(
                         value = name,
                         onValueChange = { name = it },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         label = { Text(stringResource(R.string.nfc_label_name)) },
                     )
-                    OutlinedTextField(
+                    DolphyTextField(
                         value = url,
                         onValueChange = { url = it },
                         modifier = Modifier.fillMaxWidth(),

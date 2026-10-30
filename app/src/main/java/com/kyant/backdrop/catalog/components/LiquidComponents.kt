@@ -4,8 +4,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -42,52 +40,34 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.droid.dolphy.LiquidGlassVariant
+import com.droid.dolphy.LiquidMotion
+import com.droid.dolphy.LiquidRadius
+import com.droid.dolphy.LiquidSizing
+import com.droid.dolphy.LocalReducedMotionEnabled
+import com.droid.dolphy.contrastingContentColor
+import com.droid.dolphy.liquidGlassSurface
 import com.kyant.backdrop.Backdrop
 import kotlinx.coroutines.launch
 
 private fun Modifier.liquidSurface(
     shape: Shape,
     tint: Color,
-    containerAlpha: Float = 0.62f,
-): Modifier {
-    return this
-        .shadow(
-            elevation = 10.dp,
-            shape = shape,
-            clip = false,
-            ambientColor = tint.copy(alpha = 0.16f),
-            spotColor = Color.Black.copy(alpha = 0.20f),
-        )
-        .clip(shape)
-        .background(
-            Brush.verticalGradient(
-                listOf(
-                    tint.copy(alpha = containerAlpha),
-                    tint.copy(alpha = containerAlpha * 0.68f),
-                )
-            )
-        )
-        .border(
-            width = 1.dp,
-            brush = Brush.verticalGradient(
-                listOf(
-                    Color.White.copy(alpha = 0.58f),
-                    tint.copy(alpha = 0.24f),
-                )
-            ),
-            shape = shape,
-        )
-}
+    containerAlpha: Float? = null,
+    variant: LiquidGlassVariant = LiquidGlassVariant.Secondary,
+): Modifier = liquidGlassSurface(
+    shape = shape,
+    tint = tint,
+    variant = variant,
+    containerAlpha = containerAlpha,
+)
 
 @Composable
 fun LiquidButton(
@@ -99,17 +79,21 @@ fun LiquidButton(
     applyDefaultHeight: Boolean = true,
     contentPaddingHorizontal: Dp = 24.dp,
     isInteractive: Boolean = true,
+    motionEnabled: Boolean = !LocalReducedMotionEnabled.current,
     content: @Composable RowScope.() -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (pressed && isInteractive) 0.97f else 1f,
-        animationSpec = spring(dampingRatio = 0.68f, stiffness = 700f),
+        targetValue = if (pressed && isInteractive && motionEnabled) LiquidMotion.PressScale else 1f,
+        animationSpec = spring(
+            dampingRatio = LiquidMotion.SpringDamping,
+            stiffness = LiquidMotion.SpringStiffness,
+        ),
         label = "liquid_button_press",
     )
-    val heightModifier = if (applyDefaultHeight) Modifier.defaultMinSize(minHeight = 56.dp) else Modifier
-    val contentColor = if (surfaceColor.luminance() > 0.42f) Color.Black else Color.White
+    val heightModifier = if (applyDefaultHeight) Modifier.defaultMinSize(minHeight = LiquidSizing.ButtonHeight) else Modifier
+    val contentColor = contrastingContentColor(surfaceColor)
     Row(
         modifier = modifier
             .graphicsLayer {
@@ -117,7 +101,12 @@ fun LiquidButton(
                 scaleY = scale
             }
             .then(heightModifier)
-            .liquidSurface(RoundedCornerShape(28.dp), surfaceColor, containerAlpha = 0.78f)
+            .liquidSurface(
+                RoundedCornerShape(LiquidRadius.MajorSurface),
+                surfaceColor,
+                containerAlpha = 0.84f,
+                variant = LiquidGlassVariant.Primary,
+            )
             .then(
                 if (isInteractive) {
                     Modifier.clickable(
@@ -150,7 +139,8 @@ fun LiquidBottomTabs(
     backdrop: Backdrop,
     tabsCount: Int,
     modifier: Modifier = Modifier,
-    barHeight: Dp = 64.dp,
+    barHeight: Dp = LiquidSizing.NavigationHeight,
+    motionEnabled: Boolean = !LocalReducedMotionEnabled.current,
     content: @Composable RowScope.() -> Unit,
 ) {
     val density = LocalDensity.current
@@ -165,7 +155,8 @@ fun LiquidBottomTabs(
             .liquidSurface(
                 RoundedCornerShape(barHeight / 2),
                 MaterialTheme.colorScheme.surfaceContainerHigh,
-                containerAlpha = 0.72f,
+                containerAlpha = 0.64f,
+                variant = LiquidGlassVariant.Dark,
             )
     ) {
         val safeTabCount = tabsCount.coerceAtLeast(1)
@@ -176,27 +167,34 @@ fun LiquidBottomTabs(
         val tabWidthPx = with(density) { tabWidth.toPx() }
         val maxIndicatorPosition = (safeTabCount - 1) * tabWidthPx
 
-        LaunchedEffect(selectedIndex, tabWidthPx, safeTabCount) {
+        LaunchedEffect(selectedIndex, tabWidthPx, safeTabCount, motionEnabled) {
             val target = selectedIndex * tabWidthPx
             if (!indicatorInitialized) {
                 indicatorPosition.snapTo(target)
                 indicatorInitialized = true
             } else if (!dragging) {
-                indicatorPosition.animateTo(
-                    targetValue = target,
-                    animationSpec = spring(dampingRatio = 0.68f, stiffness = 420f),
-                )
+                if (motionEnabled) {
+                    indicatorPosition.animateTo(
+                        targetValue = target,
+                        animationSpec = spring(
+                            dampingRatio = LiquidMotion.SpringDamping,
+                            stiffness = 440f,
+                        ),
+                    )
+                } else {
+                    indicatorPosition.snapTo(target)
+                }
             }
         }
 
         val indicatorScaleX by animateFloatAsState(
-            targetValue = if (dragging) 1.08f else 1f,
-            animationSpec = spring(dampingRatio = 0.62f, stiffness = 520f),
+            targetValue = if (dragging && motionEnabled) 1.04f else 1f,
+            animationSpec = spring(dampingRatio = 0.82f, stiffness = 480f),
             label = "liquid_tab_stretch_x",
         )
         val indicatorScaleY by animateFloatAsState(
-            targetValue = if (dragging) 0.96f else 1f,
-            animationSpec = spring(dampingRatio = 0.62f, stiffness = 520f),
+            targetValue = if (dragging && motionEnabled) 0.98f else 1f,
+            animationSpec = spring(dampingRatio = 0.82f, stiffness = 480f),
             label = "liquid_tab_stretch_y",
         )
         val indicatorOffset = with(density) { indicatorPosition.value.toDp() }
@@ -211,12 +209,17 @@ fun LiquidBottomTabs(
                     scaleY = indicatorScaleY
                 }
                 .padding(4.dp)
-                .liquidSurface(CircleShape, MaterialTheme.colorScheme.primary, containerAlpha = 0.82f)
+                .liquidSurface(
+                    CircleShape,
+                    MaterialTheme.colorScheme.primary,
+                    containerAlpha = 0.90f,
+                    variant = LiquidGlassVariant.Primary,
+                )
         )
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(safeTabCount, tabWidthPx) {
+                .pointerInput(safeTabCount, tabWidthPx, motionEnabled) {
                     if (tabWidthPx <= 0f) return@pointerInput
                     detectHorizontalDragGestures(
                         onDragStart = {
@@ -231,20 +234,28 @@ fun LiquidBottomTabs(
                             )
                             dragging = false
                             scope.launch {
-                                indicatorPosition.animateTo(
-                                    targetValue = targetIndex * tabWidthPx,
-                                    animationSpec = spring(dampingRatio = 0.62f, stiffness = 360f),
-                                )
+                                if (motionEnabled) {
+                                    indicatorPosition.animateTo(
+                                        targetValue = targetIndex * tabWidthPx,
+                                        animationSpec = spring(dampingRatio = 0.82f, stiffness = 420f),
+                                    )
+                                } else {
+                                    indicatorPosition.snapTo(targetIndex * tabWidthPx)
+                                }
                             }
                             currentOnTabSelected(targetIndex)
                         },
                         onDragCancel = {
                             dragging = false
                             scope.launch {
-                                indicatorPosition.animateTo(
-                                    targetValue = currentSelectedIndex * tabWidthPx,
-                                    animationSpec = spring(dampingRatio = 0.68f, stiffness = 420f),
-                                )
+                                if (motionEnabled) {
+                                    indicatorPosition.animateTo(
+                                        targetValue = currentSelectedIndex * tabWidthPx,
+                                        animationSpec = spring(dampingRatio = 0.82f, stiffness = 440f),
+                                    )
+                                } else {
+                                    indicatorPosition.snapTo(currentSelectedIndex * tabWidthPx)
+                                }
                             }
                         },
                         onHorizontalDrag = { change, dragAmount ->
@@ -291,9 +302,9 @@ fun LiquidToggle(
         onCheckedChange = onSelect,
         modifier = modifier,
         colors = SwitchDefaults.colors(
-            checkedThumbColor = MaterialTheme.colorScheme.surface,
-            checkedTrackColor = accentColor.copy(alpha = 0.78f),
-            checkedBorderColor = Color.White.copy(alpha = 0.45f),
+            checkedThumbColor = contrastingContentColor(accentColor),
+            checkedTrackColor = accentColor.copy(alpha = 0.82f),
+            checkedBorderColor = Color.White.copy(alpha = 0.16f),
         ),
     )
 }

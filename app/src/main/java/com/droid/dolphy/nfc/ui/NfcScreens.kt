@@ -1,5 +1,6 @@
 package com.droid.dolphy.nfc.ui
 
+import com.droid.dolphy.DolphyTextField
 import com.droid.dolphy.DolphyIconButton
 
 import android.app.Activity
@@ -540,7 +541,7 @@ fun NfcResultScreen(navController: NavController, viewModel: NfcViewModel, scanI
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(R.string.nfc_enter_name))
-                    androidx.compose.material3.OutlinedTextField(
+                    DolphyTextField(
                         value = emulationName,
                         onValueChange = { emulationName = it },
                         singleLine = true,

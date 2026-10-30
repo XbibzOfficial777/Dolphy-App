@@ -1,5 +1,6 @@
 package com.droid.dolphy.hid
 
+import com.droid.dolphy.DolphyTextField
 import com.droid.dolphy.DolphyIconButton
 
 import android.Manifest
@@ -684,14 +685,13 @@ private fun ScreenshotSpamScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
-                    OutlinedTextField(
+                    DolphyTextField(
                         value = targetUrl,
                         onValueChange = { targetUrl = it },
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("URL untuk dibuka") },
                         placeholder = { Text("https://...") },
                         leadingIcon = { Icon(Icons.Default.Language, contentDescription = null) },
-                        shape = RoundedCornerShape(16.dp),
                         singleLine = true
                     )
                     Spacer(modifier = Modifier.height(16.dp))

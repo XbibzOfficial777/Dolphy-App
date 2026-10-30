@@ -2,6 +2,7 @@
 
 package com.droid.dolphy.nfc.ui
 
+import com.droid.dolphy.DolphyTextField
 import android.Manifest
 import android.app.Activity
 import android.app.PendingIntent
@@ -460,7 +461,7 @@ fun NfcWriteContactScreen(navController: NavController, viewModel: NfcViewModel)
             onDismissRequest = { showPhoneDialog = false },
             title = { Text(stringResource(R.string.nfc_write_enter_phone_title)) },
             text = {
-                OutlinedTextField(
+                DolphyTextField(
                     value = phoneInput,
                     onValueChange = { phoneInput = it },
                     singleLine = true,
@@ -543,14 +544,14 @@ fun NfcWriteFormScreen(kind: String, navController: NavController, viewModel: Nf
 
                 when (kind) {
                     "wifi" -> {
-                        OutlinedTextField(
+                        DolphyTextField(
                             value = ssid,
                             onValueChange = { ssid = it },
                             label = { Text(stringResource(R.string.nfc_label_ssid)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                         )
-                        OutlinedTextField(
+                        DolphyTextField(
                             value = wifiPass,
                             onValueChange = { wifiPass = it },
                             label = { Text(stringResource(R.string.nfc_label_wifi_password)) },
@@ -559,7 +560,7 @@ fun NfcWriteFormScreen(kind: String, navController: NavController, viewModel: Nf
                         )
                     }
                     "url" -> {
-                        OutlinedTextField(
+                        DolphyTextField(
                             value = url,
                             onValueChange = { url = it },
                             label = { Text(stringResource(R.string.nfc_label_url)) },
@@ -568,7 +569,7 @@ fun NfcWriteFormScreen(kind: String, navController: NavController, viewModel: Nf
                         )
                     }
                     "email" -> {
-                        OutlinedTextField(
+                        DolphyTextField(
                             value = email,
                             onValueChange = { email = it },
                             label = { Text(stringResource(R.string.nfc_label_email)) },
@@ -576,7 +577,7 @@ fun NfcWriteFormScreen(kind: String, navController: NavController, viewModel: Nf
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                             modifier = Modifier.fillMaxWidth(),
                         )
-                        OutlinedTextField(
+                        DolphyTextField(
                             value = subject,
                             onValueChange = { subject = it },
                             label = { Text(stringResource(R.string.nfc_label_email_subject)) },
@@ -585,7 +586,7 @@ fun NfcWriteFormScreen(kind: String, navController: NavController, viewModel: Nf
                         )
                     }
                     else -> {
-                        OutlinedTextField(
+                        DolphyTextField(
                             value = plainText,
                             onValueChange = { plainText = it },
                             label = { Text(stringResource(R.string.nfc_label_plain_text)) },

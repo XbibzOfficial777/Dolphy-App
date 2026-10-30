@@ -1,5 +1,6 @@
 package com.droid.dolphy.plugin.ui
 
+import com.droid.dolphy.DolphyTextField
 import com.droid.dolphy.DolphyButton
 import com.droid.dolphy.DolphyIconButton
 
@@ -256,7 +257,7 @@ fun PluginUiRenderer(
                     text = node.value
                 }
             }
-            OutlinedTextField(
+            DolphyTextField(
                 value = text,
                 onValueChange = { new ->
                     text = new
@@ -707,7 +708,7 @@ private fun PluginDropdown(
         onExpandedChange = { if (enabled) expanded = !expanded },
         modifier = Modifier.fillMaxWidth(),
     ) {
-        OutlinedTextField(
+        DolphyTextField(
             value = selectedLabel,
             onValueChange = {},
             readOnly = true,
