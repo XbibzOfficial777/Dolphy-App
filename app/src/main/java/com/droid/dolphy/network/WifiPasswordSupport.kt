@@ -19,10 +19,18 @@ internal fun detectWifiPersonalSecurity(capabilities: String?): WifiPersonalSecu
     }
 }
 
+internal fun isRawWpaPsk(password: String): Boolean {
+    return password.length == 64 && password.all { it.isDigit() || it.lowercaseChar() in 'a'..'f' }
+}
+
 internal fun isSupportedWpaPassphrase(password: String): Boolean {
     if (password.any { it.code < 32 || it.code > 126 }) return false
     if (password.length in 8..63) return true
-    return password.length == 64 && password.all { it.isDigit() || it.lowercaseChar() in 'a'..'f' }
+    return isRawWpaPsk(password)
+}
+
+internal fun legacyWifiPskValue(password: String): String {
+    return if (isRawWpaPsk(password)) password else quoteLegacyWifiValue(password)
 }
 
 internal fun quoteLegacyWifiValue(value: String): String {

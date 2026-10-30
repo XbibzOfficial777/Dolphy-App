@@ -2195,7 +2195,7 @@ private fun testPasswordLegacy(
         @Suppress("DEPRECATION")
         val wifiConfig = android.net.wifi.WifiConfiguration().apply {
             SSID = quoteLegacyWifiValue(cleanSsid)
-            preSharedKey = quoteLegacyWifiValue(password)
+            preSharedKey = legacyWifiPskValue(password)
             BSSID = network.bssid
             allowedAuthAlgorithms.set(android.net.wifi.WifiConfiguration.AuthAlgorithm.OPEN)
             allowedKeyManagement.set(android.net.wifi.WifiConfiguration.KeyMgmt.WPA_PSK)
@@ -2323,7 +2323,10 @@ private fun testPasswordViaSuggestion(
 
         val builder = WifiNetworkSuggestion.Builder()
             .setSsid(cleanSsid)
-            .setIsAppInteractionRequired(false)
+            // Required to receive ACTION_WIFI_NETWORK_SUGGESTION_POST_CONNECTION.
+            // Without that directed broadcast, a real connection is only a timeout
+            // to this app and cannot be tied back to the exact candidate safely.
+            .setIsAppInteractionRequired(true)
         network.bssid?.let { bssid ->
             runCatching { builder.setBssid(android.net.MacAddress.fromString(bssid)) }
         }

@@ -28,5 +28,7 @@ class WifiPasswordSupportTest {
     @Test
     fun legacyConfigurationQuotingEscapesQuotesAndBackslashes() {
         assertEquals("\"  pa\\\"ss\\\\word  \"", quoteLegacyWifiValue("  pa\"ss\\word  "))
+        val rawPsk = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+        assertEquals(rawPsk, legacyWifiPskValue(rawPsk))
     }
 }
