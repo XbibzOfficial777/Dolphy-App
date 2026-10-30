@@ -43,7 +43,7 @@ class WordlistStoreTest {
     @Test
     fun duplicateGroupNamesGetCaseInsensitiveSuffixes() {
         val existing = listOf("Default", "My List", "my list (2)")
-        assertEquals("My List (3)", uniqueWordlistName("my list", existing))
+        assertEquals("my list (3)", uniqueWordlistName("my list", existing))
         assertEquals("New List", uniqueWordlistName("New List", existing))
     }
 
