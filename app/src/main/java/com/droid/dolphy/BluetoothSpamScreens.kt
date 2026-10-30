@@ -1,6 +1,8 @@
 package com.droid.dolphy
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -34,6 +36,10 @@ fun BondSpamScreen(
     val selectedDevice by viewModel.selectedDevice.collectAsState()
     val isSpamming by viewModel.isSpamming.collectAsState()
     val sliderValue by viewModel.sliderValue.collectAsState()
+    val devices = remember(discoveredDevices) {
+        discoveredDevices.distinctBy { it.address }
+    }
+    val emptyContentScrollState = rememberScrollState()
 
     LaunchedEffect(Unit) {
         if (!isScanningDevices) {
@@ -70,14 +76,26 @@ fun BondSpamScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .navigationBarsPadding()
+                        .then(
+                            if (devices.isEmpty()) {
+                                Modifier.verticalScroll(emptyContentScrollState)
+                            } else Modifier
+                        )
+                        .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 96.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Upper half: Discovered Devices list
+                    // Keep the empty state compact; let a populated device list use the remaining space.
                     Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1.2f),
+                        modifier = if (devices.isEmpty()) {
+                            Modifier
+                                .fillMaxWidth()
+                                .height(280.dp)
+                        } else {
+                            Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                        },
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
@@ -107,10 +125,6 @@ fun BondSpamScreen(
                                         strokeWidth = 2.dp
                                     )
                                 }
-                            }
-
-                            val devices = remember(discoveredDevices) {
-                                discoveredDevices.distinctBy { it.address }
                             }
 
                             if (devices.isEmpty()) {
@@ -198,11 +212,9 @@ fun BondSpamScreen(
                         }
                     }
 
-                    // Lower half: Target info, Delay slider, Start/Stop
+                    // Target, interval and action stay together above the overlaid navigation.
                     Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
@@ -210,9 +222,9 @@ fun BondSpamScreen(
                     ) {
                         Column(
                             modifier = Modifier
-                                .fillMaxSize()
+                                .fillMaxWidth()
                                 .padding(14.dp),
-                            verticalArrangement = Arrangement.SpaceBetween,
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Column(
@@ -274,6 +286,7 @@ fun BondSpamScreen(
                                     .fillMaxWidth()
                                     .height(56.dp),
                                 isActive = isSpamming,
+                                enabled = isSpamming || selectedDevice != null,
                                 accentColor = accentColor,
                                 fullyRounded = true
                             )

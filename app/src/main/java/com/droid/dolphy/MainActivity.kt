@@ -1808,7 +1808,7 @@ private fun LiquidNavigationLabel(
     val reducedMotion = LocalReducedMotionEnabled.current
     val contentColor by animateColorAsState(
         targetValue = if (selected) {
-            MaterialTheme.colorScheme.onPrimary
+            contrastingContentColor(MaterialTheme.colorScheme.primary)
         } else {
             MaterialTheme.colorScheme.onSurfaceVariant
         },
@@ -1838,10 +1838,11 @@ private fun LiquidNavigationLabel(
                     scaleY = selectionScale
                 },
         )
+        Spacer(modifier = Modifier.height(2.dp))
         Text(
             text = title,
             color = contentColor,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelMedium,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
             maxLines = 1,
         )
@@ -4727,12 +4728,14 @@ fun AnimatedBleButton(
     blinkIntervalMs: Long = 20L,
     modifier: Modifier = Modifier,
     accentColor: Color = Color.Unspecified,
-    fullyRounded: Boolean = false
+    fullyRounded: Boolean = false,
+    enabled: Boolean = true,
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val accent = if (accentColor != Color.Unspecified) accentColor else MaterialTheme.colorScheme.primary
     val activeColor = lerp(accent, Color.White, 0.22f)
+    val reducedMotion = LocalReducedMotionEnabled.current
 
     val frameFilters = remember {
         listOf(
@@ -4751,18 +4754,23 @@ fun AnimatedBleButton(
         )
     }
 
-    val transition = rememberInfiniteTransition(label = "spam")
-    val progress by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 600, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "progress"
-    )
+    val progress = if (isActive && enabled && !reducedMotion) {
+        val transition = rememberInfiniteTransition(label = "spam")
+        val animatedProgress by transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 600, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "progress"
+        )
+        animatedProgress
+    } else {
+        0f
+    }
 
-    if (isLiquidGlassChrome()) {
+    if (isLiquidGlassChrome() && enabled) {
         val pulseTint =
             if (isActive) {
                 activeColor.copy(alpha = 0.75f + 0.25f * progress)
@@ -4781,7 +4789,7 @@ fun AnimatedBleButton(
             surfaceColor = pulseTint,
         ) {
             TintedFrameAnimation(
-                frames = if (isActive) {
+                frames = if (isActive && !reducedMotion) {
                     listOf(
                         R.drawable.ble_hid_connected_15x15,
                         R.drawable.ble_hid_connected_15x15
@@ -4791,20 +4799,18 @@ fun AnimatedBleButton(
                 },
                 modifier = Modifier.size(15.dp),
                 frameDelayMs = blinkIntervalMs.coerceAtLeast(1L),
-                frameFilters = if (isActive) frameFilters else listOf(frameFilters[0])
+                frameFilters = if (isActive && !reducedMotion) frameFilters else listOf(frameFilters[0])
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = text,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
+                fontWeight = FontWeight.SemiBold,
             )
         }
     } else {
         val interactionSource = remember { MutableInteractionSource() }
         val isPressed by interactionSource.collectIsPressedAsState()
 
-        val reducedMotion = LocalReducedMotionEnabled.current
         val cornerRadius by animateDpAsState(
             targetValue = if (isPressed && !reducedMotion) 24.dp else if (fullyRounded) 32.dp else 28.dp,
             animationSpec = spring(
@@ -4816,7 +4822,7 @@ fun AnimatedBleButton(
 
         val buttonShape = RoundedCornerShape(cornerRadius)
 
-        if (isActive) {
+        if (isActive && enabled) {
             val animBrush = Brush.horizontalGradient(
                 colors = listOf(
                     activeColor.copy(alpha = 0.6f + (1f - 0.6f) * progress),
@@ -4829,6 +4835,7 @@ fun AnimatedBleButton(
                     onClick()
                 },
                 modifier = modifier.height(LiquidSizing.ButtonHeight),
+                enabled = enabled,
                 shape = buttonShape,
                 interactionSource = interactionSource,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
@@ -4842,16 +4849,28 @@ fun AnimatedBleButton(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         TintedFrameAnimation(
-                            frames = listOf(
-                                R.drawable.ble_hid_connected_15x15,
-                                R.drawable.ble_hid_connected_15x15
-                            ),
+                            frames = if (reducedMotion) {
+                                listOf(R.drawable.ble_hid_connected_15x15)
+                            } else {
+                                listOf(
+                                    R.drawable.ble_hid_connected_15x15,
+                                    R.drawable.ble_hid_connected_15x15
+                                )
+                            },
                             modifier = Modifier.size(15.dp),
                             frameDelayMs = blinkIntervalMs.coerceAtLeast(1L),
-                            frameFilters = frameFilters
+                            frameFilters = if (reducedMotion) listOf(frameFilters[0]) else frameFilters
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text, fontWeight = FontWeight.Bold, color = Color.Black)
+                        Text(
+                            text = text,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (enabled) {
+                                contrastingContentColor(activeColor)
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            },
+                        )
                     }
                 }
             }
@@ -4862,6 +4881,7 @@ fun AnimatedBleButton(
                     onClick()
                 },
                 modifier = modifier.height(LiquidSizing.ButtonHeight),
+                enabled = enabled,
                 shape = buttonShape,
                 interactionSource = interactionSource,
                 colors = ButtonDefaults.buttonColors(containerColor = accent)
@@ -4873,7 +4893,15 @@ fun AnimatedBleButton(
                     frameFilters = listOf(frameFilters[0])
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text, fontWeight = FontWeight.Bold, color = Color.Black)
+                Text(
+                    text = text,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (enabled) {
+                        contrastingContentColor(accent)
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                    },
+                )
             }
         }
     }
