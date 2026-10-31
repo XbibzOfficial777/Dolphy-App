@@ -162,7 +162,7 @@ fun DolphySlider(
                 if (usableWidth <= 0f) return@Canvas
 
                 val y = size.height / 2f
-                val fraction = animatedFraction.value.coerceIn(0f, 1f)
+                val fraction = animatedFraction.coerceIn(0f, 1f)
                 val thumbX = edge + usableWidth * fraction
 
                 drawLine(
