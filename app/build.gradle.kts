@@ -23,8 +23,8 @@ android {
         applicationId = "com.droid.dolphy"
         minSdk = 26
         targetSdk = 36
-        versionCode = 34
-        versionName = "2.14"
+        versionCode = 35
+        versionName = "2.15"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

@@ -1140,6 +1140,8 @@ fun MainScaffold(
             composable("other/network_diagnostic_hub") { NetworkDiagnosticHubScreen(screenNavController) }
             composable("lan_scanner") { LanToolsScreen(screenNavController) }
             composable("other/lan_scanner") { LanToolsScreen(screenNavController) }
+
+            composable("other/security_lab") { SecurityLabScreen(screenNavController) }
             composable("lan_scanner_run") { LanScannerScreen(screenNavController) }
             composable("other/lan_scanner_run") { LanScannerScreen(screenNavController) }
             composable("lan_camera_scan") { CameraNetworkScanScreen(screenNavController) }
