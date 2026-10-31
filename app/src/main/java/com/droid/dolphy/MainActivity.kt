@@ -123,6 +123,8 @@ import com.google.android.material.color.utilities.Hct
 import com.google.android.material.color.utilities.MaterialDynamicColors
 import com.google.android.material.color.utilities.SchemeTonalSpot
 import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.backdrop.catalog.components.LiquidBottomTab
 import com.kyant.backdrop.catalog.components.LiquidBottomTabs
 import com.kyant.backdrop.catalog.components.LiquidButton
@@ -971,8 +973,18 @@ fun MainScaffold(
         }
     }
 
-    val controlsBackdrop = remember(liquidGlassEnabled) {
-        if (liquidGlassEnabled) com.kyant.backdrop.backdrops.emptyBackdrop() else null
+    // Only the sibling bottom bar samples this capture; in-screen controls use safe fallbacks.
+    val realGlassCaptureEnabled = liquidGlassEnabled && liquidGlassNav && appStyleMode != 1 &&
+        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S
+    val backdropBaseColor = MaterialTheme.colorScheme.background
+    val contentBackdrop = rememberLayerBackdrop {
+        drawRect(backdropBaseColor)
+        drawContent()
+    }
+    val controlsBackdrop: Backdrop? = when {
+        !liquidGlassEnabled -> null
+        realGlassCaptureEnabled -> contentBackdrop
+        else -> com.kyant.backdrop.backdrops.emptyBackdrop()
     }
 
     CompositionLocalProvider(
@@ -1019,9 +1031,18 @@ fun MainScaffold(
         val bottomBlurHeight = with(density) { 105.dp.toPx() }
 
         ProgressiveBlurContent(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .then(
+                    if (realGlassCaptureEnabled) {
+                        Modifier.layerBackdrop(contentBackdrop)
+                    } else {
+                        Modifier
+                    },
+                ),
             topHeightPx = 0f,
-            bottomHeightPx = if (liquidGlassEnabled && liquidGlassNav) bottomBlurHeight else 0f,
+            // The real component backdrops replace the old full-content edge blur.
+            bottomHeightPx = if (liquidGlassEnabled && liquidGlassNav && !realGlassCaptureEnabled) bottomBlurHeight else 0f,
             blurRadius = 18f
         ) {
         NavHost(
@@ -1759,6 +1780,8 @@ private fun LiquidGlassBottomNavigation(
                 tabsCount = 3,
                 barHeight = LiquidSizing.NavigationHeight,
                 motionEnabled = !LocalReducedMotionEnabled.current,
+                // This bar is a sibling of the captured NavHost, never part of its own source.
+                useBackdropEffects = true,
                 modifier = Modifier.weight(1f),
             ) {
                 LiquidBottomTab(onClick = onBluetoothClick) {

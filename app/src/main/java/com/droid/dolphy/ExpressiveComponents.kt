@@ -1,12 +1,12 @@
 package com.droid.dolphy
 
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -32,7 +32,6 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -124,23 +123,23 @@ fun DolphySlider(
                 start = sliderState.valueRange.start,
                 endInclusive = sliderState.valueRange.endInclusive,
             )
-            val animatedFraction = remember { Animatable(targetFraction) }
-            LaunchedEffect(targetFraction, isDragged, reducedMotion) {
-                if (isDragged || reducedMotion) {
-                    animatedFraction.snapTo(targetFraction)
+            // Direct drag tracking avoids a coroutine round-trip for every pointer update.
+            // Programmatic changes retain a restrained spring; reduced motion stays immediate.
+            val animatedFraction by animateFloatAsState(
+                targetValue = targetFraction,
+                animationSpec = if (isDragged || reducedMotion) {
+                    snap()
                 } else {
-                    animatedFraction.animateTo(
-                        targetValue = targetFraction,
-                        animationSpec = spring(dampingRatio = 0.86f, stiffness = 620f),
-                    )
-                }
-            }
+                    spring(dampingRatio = 0.86f, stiffness = 620f)
+                },
+                label = "dolphy_slider_position",
+            )
             val expand by animateFloatAsState(
                 targetValue = if ((isDragged || isPressed) && !reducedMotion) 1f else 0f,
                 animationSpec = if (reducedMotion) {
                     tween(durationMillis = 0)
                 } else {
-                    spring(dampingRatio = 0.74f, stiffness = 520f)
+                    spring(dampingRatio = 0.72f, stiffness = 520f)
                 },
                 label = "dolphy_slider_expand",
             )

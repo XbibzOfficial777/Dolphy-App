@@ -1,5 +1,6 @@
 package com.kyant.backdrop.catalog.components
 
+import android.os.Build
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -55,6 +56,10 @@ import com.droid.dolphy.LocalReducedMotionEnabled
 import com.droid.dolphy.contrastingContentColor
 import com.droid.dolphy.liquidGlassSurface
 import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.drawBackdrop
+import com.kyant.backdrop.effects.blur
+import com.kyant.backdrop.effects.lens
+import com.kyant.backdrop.effects.vibrancy
 import kotlinx.coroutines.launch
 
 private fun Modifier.liquidSurface(
@@ -141,6 +146,7 @@ fun LiquidBottomTabs(
     modifier: Modifier = Modifier,
     barHeight: Dp = LiquidSizing.NavigationHeight,
     motionEnabled: Boolean = !LocalReducedMotionEnabled.current,
+    useBackdropEffects: Boolean = false,
     content: @Composable RowScope.() -> Unit,
 ) {
     val density = LocalDensity.current
@@ -148,15 +154,41 @@ fun LiquidBottomTabs(
     val indicatorPosition = remember { Animatable(0f) }
     var indicatorInitialized by remember { mutableStateOf(false) }
     var dragging by remember { mutableStateOf(false) }
+    val barShape = RoundedCornerShape(barHeight / 2)
+    val barColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    // Callers opt in only when this bar is outside the layer it samples.
+    val useCapturedGlass = useBackdropEffects &&
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+        backdrop.isCoordinatesDependent
 
     BoxWithConstraints(
         modifier = modifier
             .height(barHeight)
-            .liquidSurface(
-                RoundedCornerShape(barHeight / 2),
-                MaterialTheme.colorScheme.surfaceContainerHigh,
-                containerAlpha = 0.64f,
-                variant = LiquidGlassVariant.Dark,
+            .then(
+                if (useCapturedGlass) {
+                    Modifier.drawBackdrop(
+                        backdrop = backdrop,
+                        shape = { barShape },
+                        effects = {
+                            vibrancy()
+                            blur(6.dp.toPx())
+                            lens(
+                                refractionHeight = 12.dp.toPx(),
+                                refractionAmount = 20.dp.toPx(),
+                            )
+                        },
+                        onDrawSurface = {
+                            drawRect(barColor.copy(alpha = 0.54f))
+                        },
+                    )
+                } else {
+                    Modifier.liquidSurface(
+                        barShape,
+                        barColor,
+                        containerAlpha = 0.64f,
+                        variant = LiquidGlassVariant.Dark,
+                    )
+                },
             )
     ) {
         val safeTabCount = tabsCount.coerceAtLeast(1)
